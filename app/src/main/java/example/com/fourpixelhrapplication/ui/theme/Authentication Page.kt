@@ -1,11 +1,10 @@
 package example.com.fourpixelhrapplication.ui.theme
-
 import androidx.compose.material.icons.filled.Fingerprint
 import example.com.fourpixelhrapplication.R
-
-
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -54,6 +55,9 @@ fun LoginScreen(){
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
+    var isEmailFocused by remember { mutableStateOf(false) }
+    var isPasswordFocused by remember { mutableStateOf(false) }
+
 
     var emailError by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
@@ -69,7 +73,7 @@ fun LoginScreen(){
         //Logo placement
         Image(
             painter = painterResource(id = R.drawable.four_pixel), // Replace with your new logo name
-            contentDescription = "New App Logo",
+            contentDescription = "Four Pixel",
             modifier = Modifier.size(200.dp)
         )
 
@@ -85,8 +89,12 @@ fun LoginScreen(){
             value = email,
             onValueChange = { email = it },
             label = { Text("Email Address", fontSize = 12.sp) },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            shape = RoundedCornerShape(14.dp)
+            modifier = Modifier.fillMaxWidth().height(if (isEmailFocused) 100.dp else 60.dp) ,
+            shape = RoundedCornerShape(14.dp),
+            textStyle = TextStyle(
+                fontSize = 16.sp, // Increase font size
+                lineHeight = 20.sp // Increase line height
+            ),
         )
 
         Spacer(modifier = Modifier.height(18.dp))
@@ -95,8 +103,12 @@ fun LoginScreen(){
         OutlinedTextField(
             value = password,
             onValueChange = {password = it},
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier.fillMaxWidth().height(if (isEmailFocused) 100.dp else 60.dp) ,
             shape = RoundedCornerShape(14.dp),
+            textStyle = TextStyle(
+                fontSize = 16.sp, // Increase font size
+                lineHeight = 20.sp // Increase line height
+            ),
             label = { Text("Password",fontSize = 12.sp) },
             trailingIcon = {
                 val image = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -125,12 +137,19 @@ fun LoginScreen(){
         Text(text = "or use Biometrics", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
         Spacer(modifier = Modifier.height(8.dp))
 
-        Icon(
-            imageVector = Icons.Filled.Fingerprint,
-            contentDescription = "Fingerprint Authentication",
-            modifier = Modifier.size(80.dp),
-            tint = Color.Gray // Change color if needed
-        )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(70.dp) // Adjust the outer size for better padding
+                .background(Color(0xFFF2F2F2), shape = CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Fingerprint,
+                contentDescription = "Fingerprint Authentication",
+                modifier = Modifier.size(50.dp),
+                tint = Color.DarkGray
+            )
+        }
         Spacer(modifier = Modifier.height(40.dp))
 
         Text(
@@ -149,10 +168,3 @@ fun LoginScreen(){
 
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewLoginScreen() {
-    MaterialTheme {
-        LoginScreen()
-    }
-}

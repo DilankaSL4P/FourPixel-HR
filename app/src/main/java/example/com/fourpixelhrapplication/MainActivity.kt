@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import example.com.fourpixelhrapplication.ui.theme.DashboardView
 import example.com.fourpixelhrapplication.ui.theme.FourPixelHRApplicationTheme
 import example.com.fourpixelhrapplication.ui.theme.LoginScreen
 
@@ -21,7 +22,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             FourPixelHRApplicationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginScreen()
+                    DashboardView()
 
                 }
             }

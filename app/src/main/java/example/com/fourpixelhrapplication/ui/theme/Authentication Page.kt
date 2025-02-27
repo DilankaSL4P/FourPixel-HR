@@ -78,9 +78,11 @@ fun LoginScreen(){
         )
 
         //Header
-        Text(text = "Login", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(text = "Login", fontSize = 24.sp,fontFamily = poppinsFontFamily, fontWeight = FontWeight.Bold)
 
-        Text(text = "Enter Your Credentials to login", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(text = "Enter Your Credentials to login",fontFamily = poppinsFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -88,7 +90,7 @@ fun LoginScreen(){
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email Address", fontSize = 12.sp) },
+            label = { Text("Email Address",fontFamily = poppinsFontFamily, fontSize = 12.sp) },
             modifier = Modifier.fillMaxWidth().height(if (isEmailFocused) 100.dp else 60.dp) ,
             shape = RoundedCornerShape(14.dp),
             textStyle = TextStyle(
@@ -106,8 +108,9 @@ fun LoginScreen(){
             modifier = Modifier.fillMaxWidth().height(if (isEmailFocused) 100.dp else 60.dp) ,
             shape = RoundedCornerShape(14.dp),
             textStyle = TextStyle(
-                fontSize = 16.sp, // Increase font size
-                lineHeight = 20.sp // Increase line height
+                fontSize = 16.sp,
+                lineHeight = 20.sp,
+                fontFamily = poppinsFontFamily,
             ),
             label = { Text("Password",fontSize = 12.sp) },
             trailingIcon = {
@@ -130,11 +133,11 @@ fun LoginScreen(){
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDB833))
 
         ){
-            Text(text = "Login", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(text = "Login", color = Color.White,fontFamily = poppinsFontFamily, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(modifier = Modifier.height(32.dp))
 
-        Text(text = "or use Biometrics", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
+        Text(text = "or use Biometrics",fontFamily = poppinsFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Gray)
         Spacer(modifier = Modifier.height(8.dp))
 
         Box(
@@ -154,6 +157,7 @@ fun LoginScreen(){
 
         Text(
             text = "Sign in to different domain",
+            fontFamily = poppinsFontFamily,
             fontSize = 14.sp,
             color = Color.Gray,
             modifier = Modifier.clickable { /* Handle domain sign-in */ }
@@ -166,5 +170,11 @@ fun LoginScreen(){
 
     }
 
+}
+
+@Preview(showBackground = true)
+@Composable
+fun PreviewLoginScreen() {
+    LoginScreen()
 }
 

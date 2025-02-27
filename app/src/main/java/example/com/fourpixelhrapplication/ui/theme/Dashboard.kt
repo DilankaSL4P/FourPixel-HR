@@ -51,10 +51,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 
 import androidx.compose.ui.unit.dp
+import example.com.fourpixelhrapplication.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -78,11 +80,15 @@ fun DashboardView(){
     var selectedOption by remember { mutableStateOf("Working from") }
     val options = listOf("Office", "Work from Home")
 
+    //Clock out Popup
+    var showDialog by remember { mutableStateOf(false) }
+
+
 
     LaunchedEffect(isRunning) {
         while (isRunning) {
-            kotlinx.coroutines.delay(60000L) // Delay of 1 minute (60000 milliseconds)
-            elapsedTime++ // Increment elapsed time by 1 minute
+            kotlinx.coroutines.delay(60000L)
+            elapsedTime++
         }
     }
 
@@ -92,14 +98,12 @@ fun DashboardView(){
     ) {
         Spacer(modifier = Modifier.height(40.dp))
         //Icons on Top
-
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(
-                onClick = { /* Open Navigation Drawer */ },
+                onClick = { /* Function to open Navigation Drawer */ },
                 modifier = Modifier
                     .background(Color(0xFFF2F2F2), shape = RoundedCornerShape(4.dp))
 
@@ -110,12 +114,12 @@ fun DashboardView(){
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ){
-                IconButton(onClick = { /* Notification Click */ },
+                IconButton(onClick = { /* Function to Show Notifications */ },
                     modifier = Modifier
                         .background(Color(0xFFF2F2F2), shape = CircleShape)) {
                     Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notifications")
                 }
-                IconButton(onClick = { /* Profile Click */ }, modifier = Modifier
+                IconButton(onClick = { /* Function to Show Profile Details */ }, modifier = Modifier
                     .background(Color(0xFFF2F2F2), shape = CircleShape)) {
                     Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "Profile")
                 }
@@ -128,6 +132,7 @@ fun DashboardView(){
         Box(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = "Dashboard",
+                fontFamily = poppinsFontFamily,
                 style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
 
             )
@@ -140,6 +145,7 @@ fun DashboardView(){
         Column(modifier = Modifier.align(Alignment.Start)) {
             Text(
                 text = "Today, $formattedDate",
+                fontFamily = poppinsFontFamily,
                 style = TextStyle(fontSize = 12.sp, color = Color.Gray)
             )
         }
@@ -186,12 +192,14 @@ fun DashboardView(){
                     Text(
                         text = "$minutes:$seconds",
                         fontSize = 48.sp,
+                        fontFamily = poppinsFontFamily,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
                     Text(
                         text = "Ready",
                         fontSize = 16.sp,
+                        fontFamily = poppinsFontFamily,
                         fontWeight = FontWeight.Medium,
                         color = Color.Gray
                     )
@@ -220,6 +228,7 @@ fun DashboardView(){
                 ) {
                     Text(
                         text = selectedOption,
+                        fontFamily = poppinsFontFamily,
                         color = Color.Gray,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
@@ -268,13 +277,14 @@ fun DashboardView(){
             ) {
                 Text(
                     text = "Clock-in",
+                    fontFamily = poppinsFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 )
             }
 
             Button(
-                onClick = { isRunning = false },
+                onClick = { showDialog = true },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (!isRunning) Color.Gray else Color(0xFFFFC107)
                 ),
@@ -286,9 +296,21 @@ fun DashboardView(){
                 Text(
                     text = "Clock-out",
                     fontWeight = FontWeight.Bold,
+                    fontFamily = poppinsFontFamily,
                     fontSize = 18.sp
                 )
             }}
+        if (showDialog) {
+            DialogWithImage(
+                onDismissRequest = { showDialog = false }, // Close dialog
+                onConfirmation = {
+                    isRunning = false // Stop timer
+                    showDialog = false // Close dialog
+                },
+                painter = painterResource(id = R.drawable.wrapup),
+                imageDescription = "Clock-out confirmation"
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -296,6 +318,7 @@ fun DashboardView(){
         Box(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = "Status",
+                fontFamily = poppinsFontFamily,
                 style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
 
                 )
@@ -332,13 +355,14 @@ fun StatusCard(title: String, subtitle: String, count: String, color: Color) {
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(text = title, color = Color(0xFFDADADA), fontSize = 12.sp) // Light gray small text
-                Text(text = subtitle, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold) // Bold larger text
+                Text(text = title,fontFamily = poppinsFontFamily, color = Color(0xFFDADADA), fontSize = 12.sp)
+                Text(text = subtitle,fontFamily = poppinsFontFamily, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
             Text(
                 text = count,
                 color = Color.White,
                 fontSize = 40.sp,
+                fontFamily = poppinsFontFamily,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.End).padding(end = 16.dp))
         }

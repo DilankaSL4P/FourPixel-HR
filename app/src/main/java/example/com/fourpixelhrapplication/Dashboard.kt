@@ -1,7 +1,6 @@
-package example.com.fourpixelhrapplication.ui.theme
+package example.com.fourpixelhrapplication
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,27 +35,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.time.delay
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 
-import androidx.compose.ui.unit.dp
-import example.com.fourpixelhrapplication.R
+import example.com.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -71,7 +63,7 @@ fun DashboardView(){
 
     //Variables used for showing Date
     val currentDate = Calendar.getInstance().time
-    val dateFormat = SimpleDateFormat("EEEE, MMMM d 'th', yyyy", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("EEEE, MMMM d'th', yyyy", Locale.getDefault())
     val formattedDate = dateFormat.format(currentDate)
 
 
@@ -307,7 +299,7 @@ fun DashboardView(){
                     isRunning = false // Stop timer
                     showDialog = false // Close dialog
                 },
-                painter = painterResource(id = R.drawable.wrapup),
+                painter = painterResource(id =R.drawable.wrapup),
                 imageDescription = "Clock-out confirmation"
             )
         }

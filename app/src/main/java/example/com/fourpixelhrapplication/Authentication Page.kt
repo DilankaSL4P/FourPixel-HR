@@ -1,6 +1,5 @@
-package example.com.fourpixelhrapplication.ui.theme
+package example.com.fourpixelhrapplication
 import androidx.compose.material.icons.filled.Fingerprint
-import example.com.fourpixelhrapplication.R
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,10 +21,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,11 +40,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.dp
-
-
-
-
+import example.com.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 
 @Composable
@@ -72,7 +65,7 @@ fun LoginScreen(){
 
         //Logo placement
         Image(
-            painter = painterResource(id = R.drawable.four_pixel), // Replace with your new logo name
+            painter = painterResource(id = R.drawable.four_pixel),
             contentDescription = "Four Pixel",
             modifier = Modifier.size(200.dp)
         )
@@ -94,8 +87,8 @@ fun LoginScreen(){
             modifier = Modifier.fillMaxWidth().height(if (isEmailFocused) 100.dp else 60.dp) ,
             shape = RoundedCornerShape(14.dp),
             textStyle = TextStyle(
-                fontSize = 16.sp, // Increase font size
-                lineHeight = 20.sp // Increase line height
+                fontSize = 16.sp,
+                lineHeight = 20.sp
             ),
         )
 
@@ -112,7 +105,7 @@ fun LoginScreen(){
                 lineHeight = 20.sp,
                 fontFamily = poppinsFontFamily,
             ),
-            label = { Text("Password",fontSize = 12.sp) },
+            label = { Text("Password",fontSize = 12.sp,fontFamily = poppinsFontFamily)},
             trailingIcon = {
                 val image = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = {showPassword = !showPassword}) {
@@ -143,7 +136,7 @@ fun LoginScreen(){
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(70.dp) // Adjust the outer size for better padding
+                .size(70.dp)
                 .background(Color(0xFFF2F2F2), shape = CircleShape)
         ) {
             Icon(

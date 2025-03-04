@@ -49,6 +49,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.play.services.gcm)
+    implementation(libs.play.services.tasks)
+    implementation(libs.androidx.runner)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -68,4 +71,8 @@ dependencies {
     implementation ("androidx.compose.ui:ui-tooling-preview:1.6.0")
     implementation ("androidx.compose.runtime:runtime:1.6.0")
     implementation ("androidx.compose.foundation:foundation:1.6.0")
+    implementation("androidx.compose.ui:ui:1.5.0")
+    implementation("androidx.compose.material:material:1.5.0")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.0")
+    implementation("androidx.navigation:navigation-compose:2.6.0")
 }

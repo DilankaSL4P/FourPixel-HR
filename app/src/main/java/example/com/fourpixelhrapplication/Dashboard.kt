@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
 
 import example.com.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import java.text.SimpleDateFormat
@@ -56,7 +57,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardView(){
+fun DashboardView(navController: NavController){
     var isRunning by remember { mutableStateOf(false) }
     var elapsedTime by remember { mutableStateOf(0L) }
     val coroutineScope = rememberCoroutineScope()
@@ -79,7 +80,7 @@ fun DashboardView(){
 
     LaunchedEffect(isRunning) {
         while (isRunning) {
-            kotlinx.coroutines.delay(60000L)
+            kotlinx.coroutines.delay(1000L)
             elapsedTime++
         }
     }
@@ -88,7 +89,7 @@ fun DashboardView(){
         modifier = Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         //Icons on Top
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -178,23 +179,39 @@ fun DashboardView(){
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val minutes = (elapsedTime / 60).toString().padStart(2, '0')
+                    val hours = (elapsedTime / 3600).toString().padStart(2, '0')
+                    val minutes = ((elapsedTime % 3600) / 60).toString().padStart(2, '0')
                     val seconds = (elapsedTime % 60).toString().padStart(2, '0')
 
+
+
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "$hours:$minutes",
+                            fontSize = 48.sp,
+                            fontFamily = poppinsFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+
+                    }
                     Text(
-                        text = "$minutes:$seconds",
-                        fontSize = 48.sp,
+                        text =":$seconds",
+                        fontSize = 24.sp,
                         fontFamily = poppinsFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Gray)
+
                     Text(
-                        text = "Ready",
+                        text = if (isRunning) "Running" else "Ready",
                         fontSize = 16.sp,
                         fontFamily = poppinsFontFamily,
                         fontWeight = FontWeight.Medium,
                         color = Color.Gray
+
                     )
+
                 }
             }
         }
@@ -250,7 +267,7 @@ fun DashboardView(){
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
 // Clock-in and Clock-out Buttons
         Row(
@@ -258,7 +275,9 @@ fun DashboardView(){
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { isRunning = true },
+                onClick = {
+                    isRunning = true
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isRunning) Color.Gray else Color(0xFFFFC107)
                 ),
@@ -276,7 +295,11 @@ fun DashboardView(){
             }
 
             Button(
-                onClick = { showDialog = true },
+                onClick = {
+                    isRunning = false
+                    elapsedTime = 0L
+                    showDialog = true
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (!isRunning) Color.Gray else Color(0xFFFFC107)
                 ),
@@ -294,10 +317,10 @@ fun DashboardView(){
             }}
         if (showDialog) {
             DialogWithImage(
-                onDismissRequest = { showDialog = false }, // Close dialog
+                onDismissRequest = { showDialog = false },
                 onConfirmation = {
-                    isRunning = false // Stop timer
-                    showDialog = false // Close dialog
+                    isRunning = false
+                    showDialog = false
                 },
                 painter = painterResource(id =R.drawable.wrapup),
                 imageDescription = "Clock-out confirmation"
@@ -316,7 +339,7 @@ fun DashboardView(){
                 )
 
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -361,10 +384,3 @@ fun StatusCard(title: String, subtitle: String, count: String, color: Color) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewDashboardView() {
-    MaterialTheme {
-        DashboardView()
-    }
-}

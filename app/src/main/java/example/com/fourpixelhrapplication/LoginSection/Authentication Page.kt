@@ -31,6 +31,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import example.com.fourpixelhrapplication.R
 import example.com.fourpixelhrapplication.client.ApiService
@@ -38,20 +39,20 @@ import example.com.fourpixelhrapplication.client.LoginRequest
 import example.com.fourpixelhrapplication.client.LoginResponse
 import example.com.fourpixelhrapplication.client.RetrofitClient
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
 
 
 @Composable
-fun LoginScreen(navController: NavController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
-    var loginError by remember { mutableStateOf("") }
-    var loading by remember { mutableStateOf(false) }
+fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewModel()) {
+    val email by viewModel.email.collectAsState()
+    val password by viewModel.password.collectAsState()
+    val showPassword by viewModel.showPassword.collectAsState()
+    val loginError by viewModel.loginError.collectAsState()
+    val loading by viewModel.loading.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    // ✅ Move API service initialization out of recompositions
-    val apiService = remember { RetrofitClient.instance.create(ApiService::class.java) }
+
 
     Column(
         modifier = Modifier
@@ -80,9 +81,10 @@ fun LoginScreen(navController: NavController) {
 
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = { viewModel.updateEmail(it) },
             label = { Text("Email Address",fontFamily = poppinsFontFamily,) },
             modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
 
         )
 
@@ -90,11 +92,11 @@ fun LoginScreen(navController: NavController) {
 
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { viewModel.updatePassword(it) },
             label = { Text("Password" ,fontFamily = poppinsFontFamily,) },
             trailingIcon = {
                 val image = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { showPassword = !showPassword }) {
+                IconButton(onClick = { viewModel.toggleShowPassword() }) {
                     Icon(imageVector = image, contentDescription = "Toggle password visibility")
                 }
             },
@@ -106,54 +108,7 @@ fun LoginScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(18.dp))
 
         Button(
-            onClick = {
-                // ✅ Input validation before API request
-                if (email.isBlank() || password.isBlank()) {
-                    loginError = "Please enter both email and password."
-                    return@Button
-                }
-                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    loginError = "Invalid email format."
-                    return@Button
-                }
-
-                // ✅ Asynchronous API call with Coroutine
-                coroutineScope.launch {
-                    loginError = ""
-                    loading = true
-
-                    try {
-                        apiService.loginUser(LoginRequest(email, password)).enqueue(object : Callback<LoginResponse> {
-                            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                                loading = false
-                                if (response.isSuccessful && response.body() != null) {
-                                    val loginResponse = response.body()!!
-
-                                    // ✅ Store token in SharedPreferences
-                                    with(context.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE).edit()) {
-                                        putString("auth_token", loginResponse.token)
-                                        apply()
-                                    }
-
-                                    // ✅ Navigate to Dashboard
-                                    navController.navigate("dashboard")
-                                } else {
-                                    loginError = "Invalid email or password."
-                                }
-                            }
-
-                            override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                                loading = false
-                                loginError = "Login failed: ${t.message}"
-                            }
-                        })
-
-                    } catch (e: Exception) {
-                        loading = false
-                        loginError = "Login failed: ${e.message}"
-                    }
-                }
-            },
+            onClick = { viewModel.loginUser { navController.navigate("dashboard") } }, // ✅ Call ViewModel login function
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
@@ -161,9 +116,15 @@ fun LoginScreen(navController: NavController) {
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDB833))
         ) {
             if (loading) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp)) // ✅ Better contrast
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text(text = "Login", color = Color.White, fontSize = 16.sp,fontFamily = poppinsFontFamily, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Login",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontFamily = poppinsFontFamily,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
@@ -212,7 +173,7 @@ fun LoginScreen(navController: NavController) {
     }
 }
 
-// ✅ Function to retrieve auth token
+//
 fun getAuthToken(context: Context): String? {
     val sharedPreferences: SharedPreferences = context.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
     return sharedPreferences.getString("auth_token", null)

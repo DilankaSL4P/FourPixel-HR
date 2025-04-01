@@ -1,4 +1,4 @@
-package example.com.fourpixelhrapplication
+package example.com.fourpixelhrapplication.DashBoardSection
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,13 +41,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
+import example.com.fourpixelhrapplication.DialogWithImage
+import example.com.fourpixelhrapplication.R
 
 import example.com.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import java.text.SimpleDateFormat
@@ -58,8 +59,9 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardView(navController: NavController){
-    var isRunning by remember { mutableStateOf(false) }
-    var elapsedTime by remember { mutableStateOf(0L) }
+    val viewModel: DashboardViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val isRunning by viewModel.isRunning.collectAsState()
+    val elapsedTime by viewModel.elapsedTime.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     //Variables used for showing Date
@@ -70,18 +72,17 @@ fun DashboardView(navController: NavController){
 
     //Dropdown Menu Variables
     var expanded by remember { mutableStateOf(false) }
-    var selectedOption by remember { mutableStateOf("Working from") }
+    val selectedOption by viewModel.selectedOption.collectAsState()
     val options = listOf("Office", "Work from Home")
 
     //Clock out Popup
-    var showDialog by remember { mutableStateOf(false) }
+    val showDialog by viewModel.showDialog.collectAsState()
 
 
 
     LaunchedEffect(isRunning) {
-        while (isRunning) {
-            kotlinx.coroutines.delay(1000L)
-            elapsedTime++
+        if (isRunning) {
+            viewModel.toggleClockIn()
         }
     }
 
@@ -259,9 +260,9 @@ fun DashboardView(navController: NavController){
                     DropdownMenuItem(
                         text = { Text(option) },
                         onClick = {
-                            selectedOption = option
-                            expanded = false
+                            viewModel.setSelectedOption(option)
                         }
+
                     )
                 }
             }
@@ -275,9 +276,7 @@ fun DashboardView(navController: NavController){
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = {
-                    isRunning = true
-                },
+                onClick = { viewModel.toggleClockIn() },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isRunning) Color.Gray else Color(0xFFFFC107)
                 ),
@@ -295,11 +294,7 @@ fun DashboardView(navController: NavController){
             }
 
             Button(
-                onClick = {
-                    isRunning = false
-                    elapsedTime = 0L
-                    showDialog = true
-                },
+                onClick = { viewModel.toggleClockOut() },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (!isRunning) Color.Gray else Color(0xFFFFC107)
                 ),
@@ -317,12 +312,9 @@ fun DashboardView(navController: NavController){
             }}
         if (showDialog) {
             DialogWithImage(
-                onDismissRequest = { showDialog = false },
-                onConfirmation = {
-                    isRunning = false
-                    showDialog = false
-                },
-                painter = painterResource(id =R.drawable.wrapup),
+                onDismissRequest = { viewModel.dismissDialog() },
+                onConfirmation = { viewModel.dismissDialog() },
+                painter = painterResource(id = R.drawable.wrapup),
                 imageDescription = "Clock-out confirmation"
             )
         }

@@ -103,6 +103,7 @@ fun ApplyLeave(){
         Spacer(modifier = Modifier.height(8.dp))
 
         //Leave Type Section - Should be a drop down menu
+        //Dropdown menu items are not known
         OutlinedTextField(
             value = leaveType,
             onValueChange = { leaveType = it },
@@ -130,7 +131,7 @@ fun ApplyLeave(){
         OutlinedTextField(
             value = leaveDate,
             onValueChange = { leaveDate = it },
-            label = { Text("Start Date",fontFamily = poppinsFontFamily,
+            label = { Text("Leave Date",fontFamily = poppinsFontFamily,
                 color = Color.Gray) },
             textStyle = TextStyle(color = Color.DarkGray,fontFamily = poppinsFontFamily),
             shape = RoundedCornerShape(12.dp),

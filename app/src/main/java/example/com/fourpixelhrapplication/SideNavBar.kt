@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import example.com.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 @Composable
-fun sideDrawer(onItemClick: () -> Unit){
+fun sideDrawer(){
 
     //Drawer Items
     val menuItems = listOf(
@@ -104,7 +104,7 @@ fun sideDrawer(onItemClick: () -> Unit){
 @Preview(showBackground = true)
 @Composable
 fun SideDrawerPreview() {
-    sideDrawer(onItemClick = {})
+    sideDrawer()
 }
 
 

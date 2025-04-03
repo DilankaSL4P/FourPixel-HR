@@ -12,9 +12,8 @@ import example.com.fourpixelhrapplication.client.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import retrofit2.HttpException
+import java.io.IOException
 
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -33,7 +32,16 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
 
+    private val _userName = MutableStateFlow("")
+    val userName: StateFlow<String> = _userName
+
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
+    private val sharedPreferences: SharedPreferences =
+        getApplication<Application>().getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
+
+    init {
+        _userName.value = sharedPreferences.getString("user_name", "") ?: ""
+    }
 
     fun updateEmail(newEmail: String) {
         _email.value = newEmail
@@ -62,32 +70,65 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
         _loading.value = true
         viewModelScope.launch {
-            apiService.loginUser(LoginRequest(currentEmail, currentPassword)).enqueue(object : Callback<LoginResponse> {
-                override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                    _loading.value = false
-                    if (response.isSuccessful && response.body() != null) {
-                        val loginResponse = response.body()!!
-                        saveAuthToken(loginResponse.token)
-                        onSuccess()
+            try {
+                println("DEBUG: Attempting login with Email: $currentEmail") // Removed password from logs
+
+                val response = apiService.loginUser(LoginRequest(currentEmail, currentPassword))
+                println("DEBUG: Raw Response - ${response.raw()}")
+
+                if (response.isSuccessful) {
+                    val loginResponse = response.body()
+                    println("DEBUG: Response Body - $loginResponse")
+
+                    if (loginResponse != null) {
+                        saveAuthToken(loginResponse.data.token) // FIXED: Correct token path
+                        saveUserName(loginResponse.data.user.name) // FIXED: Correct user name path
+                        onSuccess()  // Success callback
                     } else {
-                        _loginError.value = "Invalid email or password."
+                        _loginError.value = "Empty response from server"
+                        println("DEBUG: Empty response body")
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    println("DEBUG: API Error - Code: ${response.code()}, Message: $errorBody")
+
+                    _loginError.value = when (response.code()) {
+                        401 -> "Invalid credentials"
+                        403 -> "Access denied"
+                        404 -> "Service not found"
+                        500 -> "Server error"
+                        else -> "Login failed (Error ${response.code()})"
                     }
                 }
-
-                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                    _loading.value = false
-                    _loginError.value = "Login failed: ${t.message}"
-                }
-            })
+            } catch (e: IOException) {
+                _loginError.value = "Network error. Please check your connection."
+                println("DEBUG: IOException - ${e.localizedMessage}")
+            } catch (e: HttpException) {
+                _loginError.value = "HTTP error: ${e.message}"
+                println("DEBUG: HttpException - ${e.localizedMessage}")
+            } catch (e: Exception) {
+                _loginError.value = "Unexpected error: ${e.localizedMessage}"
+                println("DEBUG: Unexpected Exception - ${e.localizedMessage}")
+            } finally {
+                _loading.value = false
+            }
         }
     }
 
+
     private fun saveAuthToken(token: String) {
-        val sharedPreferences: SharedPreferences =
-            getApplication<Application>().getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
         with(sharedPreferences.edit()) {
             putString("auth_token", token)
             apply()
         }
+    }
+
+    private fun saveUserName(name: String?) {
+        val safeName = name ?: "DefaultUser" // Ensures it's never null
+        with(sharedPreferences.edit()) {
+            putString("user_name", safeName)
+            apply()
+        }
+        _userName.value = safeName
     }
 }

@@ -2,12 +2,14 @@ package example.com.fourpixelhrapplication.LoginSection
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -40,6 +42,11 @@ import example.com.fourpixelhrapplication.client.LoginResponse
 import example.com.fourpixelhrapplication.client.RetrofitClient
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import kotlinx.coroutines.flow.first
+import java.net.URLEncoder
 
 
 @Composable
@@ -51,8 +58,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
     val loading by viewModel.loading.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
-
+    val userName by viewModel.userName.collectAsState()
 
     Column(
         modifier = Modifier
@@ -79,13 +85,20 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
         )
         Spacer(modifier = Modifier.height(12.dp))
 
+        val focusManager = LocalFocusManager.current
+
         OutlinedTextField(
             value = email,
             onValueChange = { viewModel.updateEmail(it) },
-            label = { Text("Email Address",fontFamily = poppinsFontFamily,) },
+            label = { Text("Email Address", fontFamily = poppinsFontFamily) },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next // Enables "Next" action on keyboard
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) } // Moves focus to password field
+            )
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -93,7 +106,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
         OutlinedTextField(
             value = password,
             onValueChange = { viewModel.updatePassword(it) },
-            label = { Text("Password" ,fontFamily = poppinsFontFamily,) },
+            label = { Text("Password", fontFamily = poppinsFontFamily) },
             trailingIcon = {
                 val image = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { viewModel.toggleShowPassword() }) {
@@ -101,17 +114,38 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
                 }
             },
             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done // Enables "Done" action on keyboard
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    focusManager.clearFocus() // Dismisses the keyboard
+                    viewModel.loginUser {
+                        val updatedUserName = viewModel.userName.value
+                        if (updatedUserName.isNotBlank()) {
+                            val encodedUserName = URLEncoder.encode(updatedUserName, "UTF-8")
+                            navController.navigate("dashboard/$encodedUserName")
+                        }
+                    }
+                }
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(18.dp))
 
         Button(
-            onClick = { viewModel.loginUser { navController.navigate("dashboard") } }, // ✅ Call ViewModel login function
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
+            onClick = {
+                viewModel.loginUser {
+                    val updatedUserName = viewModel.userName.value
+                    if (updatedUserName.isNotBlank()) {
+                        val encodedUserName = java.net.URLEncoder.encode(updatedUserName, "UTF-8")
+                        navController.navigate("dashboard/$encodedUserName")
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDB833))
         ) {
@@ -127,10 +161,6 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
                 )
             }
         }
-
-        if (loginError.isNotEmpty()) {
-            Text(text = loginError, color = Color.Red, fontSize = 12.sp)
-        }
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "or use Biometrics",
@@ -142,7 +172,9 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
         Spacer(modifier = Modifier.height(12.dp))
 
         IconButton(
-            onClick = {  },
+            onClick = {
+                TODO("Implement biometric authentication logic here")
+            },
             modifier = Modifier
                 .size(72.dp)
                 .background(Color(0xFFEFEFEF), shape = CircleShape)

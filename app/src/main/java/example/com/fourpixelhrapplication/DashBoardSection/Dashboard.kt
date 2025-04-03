@@ -44,6 +44,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.navigation.NavController
@@ -58,8 +60,17 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardView(navController: NavController){
+fun DashboardView(navController: NavController, userName: String){
+
+
     val viewModel: DashboardViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+
+    LaunchedEffect(userName) {
+        viewModel.setUserName(userName)
+    }
+
+    val displayedUserName by viewModel.userName.collectAsState()
+
     val isRunning by viewModel.isRunning.collectAsState()
     val elapsedTime by viewModel.elapsedTime.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -70,21 +81,8 @@ fun DashboardView(navController: NavController){
     val formattedDate = dateFormat.format(currentDate)
 
 
-    //Dropdown Menu Variables
-    var expanded by remember { mutableStateOf(false) }
-    val selectedOption by viewModel.selectedOption.collectAsState()
-    val options = listOf("Office", "Work from Home")
-
     //Clock out Popup
     val showDialog by viewModel.showDialog.collectAsState()
-
-
-
-    LaunchedEffect(isRunning) {
-        if (isRunning) {
-            viewModel.toggleClockIn()
-        }
-    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -125,11 +123,11 @@ fun DashboardView(navController: NavController){
         //Dashboard Text
         Box(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "Dashboard",
+                text = "Welcome, $displayedUserName 👋",
                 fontFamily = poppinsFontFamily,
                 style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
 
-            )
+                )
 
         }
 
@@ -219,54 +217,7 @@ fun DashboardView(navController: NavController){
 
         Spacer(modifier = Modifier.height(30.dp))
 
-//Dropdown Menu
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(12.dp))
-                    .clickable { expanded = !expanded }
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = selectedOption,
-                        fontFamily = poppinsFontFamily,
-                        color = Color.Gray,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Dropdown Arrow",
-                        tint = Color.Gray
-                    )
-                }
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option) },
-                        onClick = {
-                            viewModel.setSelectedOption(option)
-                        }
-
-                    )
-                }
-            }
-        }
+        DropdownMenu(viewModel)
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -350,7 +301,7 @@ fun StatusCard(title: String, subtitle: String, count: String, color: Color) {
         modifier = Modifier
             .width(160.dp)
             .height(160.dp)
-            ,
+        ,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = color)
     ) {
@@ -372,6 +323,70 @@ fun StatusCard(title: String, subtitle: String, count: String, color: Color) {
                 fontFamily = poppinsFontFamily,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.End).padding(end = 16.dp))
+        }
+    }
+}
+
+@Composable
+fun DropdownMenu(viewModel: DashboardViewModel) {
+    var expanded by remember { mutableStateOf(false) }
+    var displayText by remember { mutableStateOf("Working from") } // Default text
+    val selectedOption by viewModel.selectedOption.collectAsState()
+    val options = listOf("Office", "Work from Home")
+
+    var dropdownWidth by remember { mutableStateOf(0) } // Stores width dynamically
+
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(12.dp))
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .onGloballyPositioned { coordinates ->
+                    dropdownWidth = coordinates.size.width // Capture width of trigger
+                }
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start, // Aligns text to start
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = displayText,
+                    fontFamily = poppinsFontFamily,
+                    color = Color.Gray,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f) // Pushes arrow to end
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Dropdown Arrow",
+                    tint = Color.Gray
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .width(with(LocalDensity.current) { dropdownWidth.toDp() }) // Set menu width same as trigger
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option, fontFamily = poppinsFontFamily) },
+                    onClick = {
+                        viewModel.setSelectedOption(option)
+                        displayText = option
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }

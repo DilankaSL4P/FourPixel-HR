@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "example.com.fourpixelhrapplication"
+    namespace = "com.fourpixel.fourpixelhrapplication"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "example.com.fourpixelhrapplication"
+        applicationId = "com.fourpixel.fourpixelhrapplication"
         minSdk = 28
         targetSdk = 35
         versionCode = 1
@@ -96,5 +96,6 @@ dependencies {
     implementation ("androidx.core:core:1.9.0")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation ("androidx.compose.runtime:runtime:1.5.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
 
 }

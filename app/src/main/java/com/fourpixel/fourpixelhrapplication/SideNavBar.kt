@@ -1,6 +1,8 @@
 package com.fourpixel.fourpixelhrapplication
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,11 +20,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 @Composable
@@ -55,12 +60,14 @@ fun sideDrawer(userName: String, userImageUrl: String) {
                     .wrapContentSize(Alignment.Center)
             ) {
                 // Show first letter of name
-                Text(
-                    userName.firstOrNull()?.uppercase() ?: "U",
-                    fontFamily = poppinsFontFamily,
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold
+                Image(
+                    painter = rememberAsyncImagePainter(userImageUrl),
+                    contentDescription = "Profile Image in Drawer",
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.LightGray, CircleShape),
+                    contentScale = ContentScale.Crop
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))

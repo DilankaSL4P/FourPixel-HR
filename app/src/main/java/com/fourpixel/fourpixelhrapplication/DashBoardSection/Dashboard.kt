@@ -55,9 +55,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.navigation.NavController
-import com.fourpixel.fourpixelhrapplication.DialogWithImage
 import com.fourpixel.fourpixelhrapplication.R
-import com.fourpixel.fourpixelhrapplication.sideDrawer
 import coil.compose.rememberAsyncImagePainter
 
 

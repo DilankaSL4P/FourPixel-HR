@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication
+package com.fourpixel.fourpixelhrapplication.Work
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,18 +18,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.SearchBar
+
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,20 +41,10 @@ import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskListScreen() {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("All") }
-
-    val allTasks = listOf(
-        Task("P001-02", "Task Page Design", "Mobile App UI", "Ongoing", "5 Days left"),
-        Task("P001-03", "Holiday Page Design", "Mobile App UI", "Pending", "14 Days left"),
-        Task("P001-01", "Login Page Design", "Mobile App UI", "Completed", "Completed on 2024.11.10")
-    )
-
-    val filteredTasks = when (selectedFilter) {
-        "All" -> allTasks
-        else -> allTasks.filter { it.status == selectedFilter }
-    }
+fun TaskListScreen(viewModel: TaskListViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
+    val filteredTasks by viewModel.filteredTasks.collectAsState()
 
     Column(
         modifier = Modifier
@@ -74,39 +64,24 @@ fun TaskListScreen() {
                 fontWeight = FontWeight.Bold,
                 fontFamily = poppinsFontFamily
             )
+
             Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = {},
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9C75A)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("+ ADD Task ", fontFamily = poppinsFontFamily)
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Search
-        @Composable
-        fun SearchBar(searchQuery: String, onSearchQueryChange: (String) -> Unit) {
-            TextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                placeholder = { Text("Search", fontFamily = poppinsFontFamily) },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Search, contentDescription = "Search Icon")
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { onSearchQueryChange("") }) {
-                            Icon(imageVector = Icons.Default.Close, contentDescription = "Clear Search")
-                        }
-                    }
-                },
-                singleLine = true,
-                colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color(0xFFF5F5F5),
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                )
-            )
-        }
+        // Search Bar
+        SearchBar(
+            searchQuery = searchQuery,
+            onSearchQueryChange = { viewModel.updateSearchQuery(it) }
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -116,7 +91,7 @@ fun TaskListScreen() {
                 FilterChip(
                     text = status,
                     selected = selectedFilter == status,
-                    onClick = { selectedFilter = status }
+                    onClick = { viewModel.updateFilter(status) }
                 )
             }
         }
@@ -146,6 +121,34 @@ fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .clickable { onClick() },
         color = contentColor
+    )
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchBar(searchQuery: String, onSearchQueryChange: (String) -> Unit) {
+    TextField(
+        value = searchQuery,
+        onValueChange = onSearchQueryChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        placeholder = { Text("Search", fontFamily = poppinsFontFamily) },
+        leadingIcon = {
+            Icon(imageVector = Icons.Default.Search, contentDescription = "Search Icon")
+        },
+        trailingIcon = {
+            if (searchQuery.isNotEmpty()) {
+                IconButton(onClick = { onSearchQueryChange("") }) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Clear Search")
+                }
+            }
+        },
+        singleLine = true,
+        colors = TextFieldDefaults.textFieldColors(
+            containerColor = Color(0xFFF5F5F5),
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        )
     )
 }
 

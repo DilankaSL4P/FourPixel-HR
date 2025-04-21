@@ -111,15 +111,18 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
-                    focusManager.clearFocus() // Dismisses the keyboard
+                    focusManager.clearFocus()
                     viewModel.loginUser {
                         val updatedUserName = viewModel.userName.value
                         val updatedImageUrl = viewModel.userImageUrl.value
+                        val updatedUserRole = viewModel.userRole.value
 
                         if (updatedUserName.isNotBlank()) {
                             val encodedUserName = URLEncoder.encode(updatedUserName, "UTF-8")
                             val encodedImageUrl = URLEncoder.encode(updatedImageUrl, "UTF-8")
-                            navController.navigate("dashboard/$encodedUserName/$encodedImageUrl")
+                            val encodedUserRole = URLEncoder.encode(updatedUserRole, "UTF-8")
+
+                            navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole")
                         }
                     }
                 }
@@ -134,11 +137,13 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
                 viewModel.loginUser {
                     val updatedUserName = viewModel.userName.value
                     val updatedImageUrl = viewModel.userImageUrl.value
+                    val updatedUserRole = viewModel.userRole.value
 
                     if (updatedUserName.isNotBlank()) {
                         val encodedUserName = URLEncoder.encode(updatedUserName, "UTF-8")
                         val encodedImageUrl = URLEncoder.encode(updatedImageUrl, "UTF-8")
-                        navController.navigate("dashboard/$encodedUserName/$encodedImageUrl")
+                        val encodedUserRole = URLEncoder.encode(updatedUserRole, "UTF-8")
+                        navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole")
                     }
                 }
             },
@@ -206,14 +211,4 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
 fun getAuthToken(context: Context): String? {
     val sharedPreferences: SharedPreferences = context.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
     return sharedPreferences.getString("auth_token", null)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    val fakeNavController = rememberNavController()
-
-    Surface {
-        LoginScreen(navController = fakeNavController)
-    }
 }

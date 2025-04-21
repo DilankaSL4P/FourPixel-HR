@@ -22,9 +22,15 @@ data class UserData(
 )
 
 data class User(
-    @SerializedName("name") val name: String, // Fix: Map correctly to "name" inside "user"
+    @SerializedName("name") val name: String,
     @SerializedName("email") val email: String,
-    @SerializedName("image_url") val imageUrl: String?
+    @SerializedName("image_url") val imageUrl: String?,
+    @SerializedName("roles") val roles: List<Role>? // ← Add this line
+)
+
+data class Role(
+    @SerializedName("name") val name: String,
+    @SerializedName("display_name") val displayName: String
 )
 
 interface ApiService {

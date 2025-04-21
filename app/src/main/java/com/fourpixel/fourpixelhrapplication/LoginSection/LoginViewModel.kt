@@ -36,6 +36,8 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _userImageUrl = MutableStateFlow("")
     val userImageUrl: StateFlow<String> = _userImageUrl
+    private val _userRole = MutableStateFlow("")
+    val userRole: StateFlow<String> = _userRole
 
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
     private val sharedPreferences: SharedPreferences =
@@ -43,6 +45,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         _userName.value = sharedPreferences.getString("user_name", "") ?: ""
+        _userRole.value = sharedPreferences.getString("user_role", "") ?: ""
     }
 
     fun updateEmail(newEmail: String) {
@@ -87,7 +90,13 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                         saveAuthToken(loginResponse.data.token)
                         saveUserName(loginResponse.data.user.name)
                         saveUserImageUrl(loginResponse.data.user.imageUrl ?: "")
+
+                        // ✅ Extract the first role if available
+                        val displayRole = loginResponse.data.user.roles?.firstOrNull()?.displayName ?: "Employee"
+                        saveUserRole(displayRole)
+
                         onSuccess()
+
                     } else {
                         _loginError.value = "Empty response from server"
                         println("DEBUG: Empty response body")
@@ -142,6 +151,14 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             apply()
         }
         _userImageUrl.value = imageUrl
+    }
+
+    private fun saveUserRole(role: String) {
+        with(sharedPreferences.edit()) {
+            putString("user_role", role)
+            apply()
+        }
+        _userRole.value = role
     }
 
 

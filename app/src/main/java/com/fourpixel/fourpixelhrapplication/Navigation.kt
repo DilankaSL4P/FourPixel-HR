@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.fourpixel.fourpixelhrapplication.DashBoardSection.DashboardView
+import com.fourpixel.fourpixelhrapplication.HR.LeavesScreen
 import com.fourpixel.fourpixelhrapplication.LoginSection.LoginScreen
 
 @Composable
@@ -31,6 +32,10 @@ fun AppNavigation() {
             val userImageUrl = backStackEntry.arguments?.getString("userImageUrl") ?: ""
             val userRole = backStackEntry.arguments?.getString("userRole") ?: ""
             DashboardView(navController, userName, userImageUrl, userRole)
+        }
+
+        composable("leaves") {
+            LeavesScreen()
         }
     }
 }

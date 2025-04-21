@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication
+package com.fourpixel.fourpixelhrapplication.Work
 
 class TaskDetails (
     val id: String,

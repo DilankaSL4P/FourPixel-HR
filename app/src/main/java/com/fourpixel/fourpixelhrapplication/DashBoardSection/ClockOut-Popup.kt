@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication
+package com.fourpixel.fourpixelhrapplication.DashBoardSection
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.fourpixel.fourpixelhrapplication.R
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 

@@ -20,16 +20,17 @@ fun AppNavigation() {
         }
 
         composable(
-            "dashboard/{userName}/{userImageUrl}",
+            "dashboard/{userName}/{userImageUrl}/{userRole}",
             arguments = listOf(
                 navArgument("userName") { type = NavType.StringType },
-                navArgument("userImageUrl") { type = NavType.StringType }
+                navArgument("userImageUrl") { type = NavType.StringType },
+                navArgument("userRole") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val userName = backStackEntry.arguments?.getString("userName") ?: "User"
             val userImageUrl = backStackEntry.arguments?.getString("userImageUrl") ?: ""
-            DashboardView(navController, userName, userImageUrl)
+            val userRole = backStackEntry.arguments?.getString("userRole") ?: ""
+            DashboardView(navController, userName, userImageUrl, userRole)
         }
     }
 }
-

@@ -36,8 +36,13 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _userImageUrl = MutableStateFlow("")
     val userImageUrl: StateFlow<String> = _userImageUrl
+
     private val _userRole = MutableStateFlow("")
     val userRole: StateFlow<String> = _userRole
+
+    private val _projectCount = MutableStateFlow(0)
+    val projectCount: StateFlow<Int> = _projectCount
+
 
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
     private val sharedPreferences: SharedPreferences =
@@ -87,16 +92,18 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     println("DEBUG: Response Body - $loginResponse")
 
                     if (loginResponse != null) {
-                        saveAuthToken(loginResponse.data.token)
+                        val token = loginResponse.data.token
+
+                        saveAuthToken(token)
                         saveUserName(loginResponse.data.user.name)
                         saveUserImageUrl(loginResponse.data.user.imageUrl ?: "")
 
-                        // ✅ Extract the first role if available
                         val displayRole = loginResponse.data.user.roles?.firstOrNull()?.displayName ?: "Employee"
                         saveUserRole(displayRole)
 
-                        onSuccess()
+                        fetchProjectCount(token)
 
+                        onSuccess()
                     } else {
                         _loginError.value = "Empty response from server"
                         println("DEBUG: Empty response body")
@@ -160,6 +167,25 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         }
         _userRole.value = role
     }
+
+    private fun fetchProjectCount(token: String) {
+        viewModelScope.launch {
+            try {
+                val response = apiService.getProjects("Bearer $token")
+                if (response.isSuccessful) {
+                    val projectResponse = response.body()
+                    val total = projectResponse?.meta?.paging?.total ?: 0
+                    _projectCount.value = total
+                    println("DEBUG: Project count is $total")
+                } else {
+                    println("DEBUG: Failed to fetch projects - ${response.code()}")
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Exception in fetching projects - ${e.localizedMessage}")
+            }
+        }
+    }
+
 
 
 }

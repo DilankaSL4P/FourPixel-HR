@@ -3,11 +3,18 @@ package com.fourpixel.fourpixelhrapplication.DashBoardSection
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import com.fourpixel.fourpixelhrapplication.client.ApiService
+import com.fourpixel.fourpixelhrapplication.client.RetrofitClient
+import kotlinx.coroutines.launch
+
 
 class DashboardViewModelJP(application: Application) : AndroidViewModel(application) {
 
@@ -35,8 +42,22 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _pendingTasks = MutableStateFlow(0)
     val pendingTasks = _pendingTasks.asStateFlow()
 
+    private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
+
+    private val _projectCount = MutableStateFlow(0)
+    val projectCount = _projectCount.asStateFlow()
+
+
+
+
+
+
+
+
     init {
-        loadUserName() // Load username when DashboardViewModel is created
+        loadUserName()
+        fetchProjectCount()
+        fetchTaskCount()
     }
 
     fun setUserName(name: String) {
@@ -99,4 +120,44 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             }
         }
     }
+
+    fun fetchProjectCount() {
+        val token = sharedPreferences.getString("auth_token", null) ?: return
+
+        viewModelScope.launch {
+            try {
+                val response = apiService.getProjects("Bearer $token")
+                if (response.isSuccessful) {
+                    val total = response.body()?.meta?.paging?.total ?: 0
+                    _projectCount.value = total
+                    updateStatus(assigned = total, pending = 0) // Optional: update assigned projects
+                } else {
+                    println("DEBUG: Error fetching projects - ${response.code()}")
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Exception while fetching project count - ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun fetchTaskCount() {
+        val token = sharedPreferences.getString("auth_token", null) ?: return
+
+        viewModelScope.launch {
+            try {
+                val response = apiService.getMyTasks("Bearer $token")
+                if (response.isSuccessful) {
+                    val totalTasks = response.body()?.meta?.paging?.total ?: 0
+                    _pendingTasks.value = totalTasks
+                    updateStatus(assigned = _projectCount.value, pending = totalTasks)
+                } else {
+                    println("DEBUG: Error fetching tasks - ${response.code()}")
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Exception while fetching task count - ${e.localizedMessage}")
+            }
+        }
+    }
+
+
 }

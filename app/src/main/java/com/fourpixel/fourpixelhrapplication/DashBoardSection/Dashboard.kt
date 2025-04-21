@@ -97,6 +97,14 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    val assignedProjects by viewModel.assignedProjects.collectAsState()
+    val pendingTasks by viewModel.pendingTasks.collectAsState()
+
+
+
+
+
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -322,9 +330,9 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatusCard("Assigned", "Projects", "03", Color.Black)
+            StatusCard("Assigned", "Projects", assignedProjects.toString(), Color.Black)
             Spacer(modifier = Modifier.width(10.dp))
-            StatusCard("Pending", "Tasks", "10", Color(0xFF88B04B))
+            StatusCard("Pending", "Tasks", pendingTasks.toString(), Color(0xFF88B04B))
         }
     }
 }}
@@ -416,7 +424,7 @@ fun DropdownMenu(viewModel: DashboardViewModelJP, onSelectionMade: (Boolean) -> 
                         displayText = option
                         isSelected = true
                         expanded = false
-                        onSelectionMade(true)  // Notify parent that a selection was made
+                        onSelectionMade(true)
                     }
                 )
             }
@@ -428,12 +436,12 @@ fun DropdownMenu(viewModel: DashboardViewModelJP, onSelectionMade: (Boolean) -> 
 fun TodayDateDisplay() {
     val currentDate = Calendar.getInstance()
 
-    // Format without the day (to manually handle the suffix)
+
     val dateFormat = SimpleDateFormat("EEEE, MMMM", Locale.getDefault())
     val day = currentDate.get(Calendar.DAY_OF_MONTH)
     val year = currentDate.get(Calendar.YEAR)
 
-    // Get correctly formatted day with suffix
+
     val formattedDate = "${dateFormat.format(currentDate.time)} ${getDayWithSuffix(day)}, $year"
 
     Text(

@@ -9,6 +9,8 @@ import androidx.navigation.navArgument
 import com.fourpixel.fourpixelhrapplication.DashBoardSection.DashboardView
 import com.fourpixel.fourpixelhrapplication.HR.LeavesScreen
 import com.fourpixel.fourpixelhrapplication.LoginSection.LoginScreen
+import com.fourpixel.fourpixelhrapplication.Work.ProjectListScreen
+import com.fourpixel.fourpixelhrapplication.Work.TaskListScreen
 
 @Composable
 fun AppNavigation() {
@@ -36,6 +38,14 @@ fun AppNavigation() {
 
         composable("leaves") {
             LeavesScreen()
+        }
+
+        composable("tasks") {
+            TaskListScreen() // or whatever your tasks screen composable is called
+        }
+
+        composable("projects") {
+            ProjectListScreen() // or whatever your tasks screen composable is called
         }
     }
 }

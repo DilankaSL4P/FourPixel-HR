@@ -111,7 +111,12 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
             ModalDrawerSheet(
                 modifier = Modifier.width(280.dp)
             ) {
-                sideDrawer(userName, userImageUrl,userRole)
+                sideDrawer(
+                    navController = navController,
+                    userName = userName,
+                    userImageUrl = userImageUrl,
+                    userRole = userRole
+                )
             }
         }
     ) {
@@ -337,6 +342,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     }
 }}
 
+//Project and Task Cards
 @Composable
 fun StatusCard(title: String, subtitle: String, count: String, color: Color) {
     Card(
@@ -369,6 +375,7 @@ fun StatusCard(title: String, subtitle: String, count: String, color: Color) {
     }
 }
 
+//Select Work Location Dropdown Menu
 @Composable
 fun DropdownMenu(viewModel: DashboardViewModelJP, onSelectionMade: (Boolean) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
@@ -432,6 +439,7 @@ fun DropdownMenu(viewModel: DashboardViewModelJP, onSelectionMade: (Boolean) -> 
     }
 }
 
+// Date format
 @Composable
 fun TodayDateDisplay() {
     val currentDate = Calendar.getInstance()
@@ -451,14 +459,14 @@ fun TodayDateDisplay() {
     )
 }
 
-// Function to get the correct suffix for the date
+// Date Suffix Filtering
 fun getDayWithSuffix(day: Int): String {
     return when {
-        day in 11..13 -> "$day" + "th"  // 11th, 12th, 13th are always "th"
-        day % 10 == 1 -> "$day" + "st"  // 1st, 21st, 31st
-        day % 10 == 2 -> "$day" + "nd"  // 2nd, 22nd
-        day % 10 == 3 -> "$day" + "rd"  // 3rd, 23rd
-        else -> "$day" + "th"           // 4th, 5th, ..., 10th, etc.
+        day in 11..13 -> "$day" + "th"
+        day % 10 == 1 -> "$day" + "st"
+        day % 10 == 2 -> "$day" + "nd"
+        day % 10 == 3 -> "$day" + "rd"
+        else -> "$day" + "th"
     }
 }
 

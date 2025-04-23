@@ -2,31 +2,13 @@ package com.fourpixel.fourpixelhrapplication.Work
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fourpixel.fourpixelhrapplication.client.Task
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,6 +106,7 @@ fun FilterChip(text: String, selected: Boolean, onClick: () -> Unit) {
         color = contentColor
     )
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBar(searchQuery: String, onSearchQueryChange: (String) -> Unit) {
@@ -184,14 +168,14 @@ fun TaskCard(task: Task) {
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = task.title,
+            text = task.heading,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = poppinsFontFamily
         )
 
         Text(
-            text = task.subtitle,
+            text = "Task ID: ${task.id}",
             fontSize = 14.sp,
             fontFamily = poppinsFontFamily,
             color = Color.Gray
@@ -203,13 +187,13 @@ fun TaskCard(task: Task) {
             Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Gray)
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = task.due,
+                text = task.dueDate ?: "No due date",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 fontFamily = poppinsFontFamily
             )
             Spacer(modifier = Modifier.weight(1f))
-            CircleInitial("J")
+            CircleInitial("J") // You can replace this with actual user initials if available
         }
     }
 }
@@ -231,6 +215,7 @@ fun CircleInitial(initial: String) {
     }
 }
 
+
 data class Task(
     val id: String,
     val title: String,
@@ -239,12 +224,6 @@ data class Task(
     val due: String
 )
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun TaskListScreenPreview() {
 
-        TaskListScreen()
-
-}
 
 

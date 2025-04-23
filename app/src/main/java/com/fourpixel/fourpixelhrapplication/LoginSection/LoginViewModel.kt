@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 
+
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _email = MutableStateFlow("")
@@ -45,6 +46,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
 
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
+
     private val sharedPreferences: SharedPreferences =
         getApplication<Application>().getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
 

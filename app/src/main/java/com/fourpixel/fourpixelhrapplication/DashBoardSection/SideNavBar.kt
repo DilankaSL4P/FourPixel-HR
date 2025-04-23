@@ -32,13 +32,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 data class MenuItem(val label: String, val children: List<String> = emptyList())
 
 @Composable
-fun sideDrawer(userName: String, userImageUrl: String, userRole: String) {
+fun sideDrawer(navController: NavController, userName: String, userImageUrl: String, userRole: String) {
 
     val menuItems = listOf(
         MenuItem("Dashboard"),
@@ -153,7 +154,11 @@ fun sideDrawer(userName: String, userImageUrl: String, userRole: String) {
                                 .fillMaxWidth()
                                 .padding(start = 36.dp, top = 2.dp, bottom = 4.dp)
                                 .clickable {
-                                    // Handle sub-item click
+                                    when (child) {
+                                        "Tasks" -> navController.navigate("tasks")
+                                        "Projects" -> navController.navigate("projects")
+
+                                    }
                                 }
                         )
                     }

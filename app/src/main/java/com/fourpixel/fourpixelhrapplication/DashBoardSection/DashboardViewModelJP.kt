@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import com.fourpixel.fourpixelhrapplication.client.ApiService
+import com.fourpixel.fourpixelhrapplication.client.Notice
 import com.fourpixel.fourpixelhrapplication.client.RetrofitClient
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,12 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _pendingTasks = MutableStateFlow(0)
     val pendingTasks = _pendingTasks.asStateFlow()
 
+    private val _notices = MutableStateFlow<List<Notice>>(emptyList())
+    val notices = _notices.asStateFlow()
+
+    private val _showNoticePopup = MutableStateFlow(false)
+    val showNoticePopup = _showNoticePopup.asStateFlow()
+
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
 
     private val _projectCount = MutableStateFlow(0)
@@ -58,6 +65,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         loadUserName()
         fetchProjectCount()
         fetchTaskCount()
+        fetchNotices()
     }
 
     fun setUserName(name: String) {
@@ -155,6 +163,26 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 }
             } catch (e: Exception) {
                 println("DEBUG: Exception while fetching task count - ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun fetchNotices() {
+        val token = sharedPreferences.getString("auth_token", null) ?: return
+
+        viewModelScope.launch {
+            try {
+                val response = apiService.getNotices("Bearer $token")
+                if (response.isSuccessful) {
+                    val noticesList = response.body()?.data ?: emptyList()
+                    _notices.value = noticesList
+
+                    _showNoticePopup.value = noticesList.isNotEmpty()
+                } else {
+                    println("DEBUG: Error fetching notices - ${response.code()}")
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Exception while fetching notices - ${e.localizedMessage}")
             }
         }
     }

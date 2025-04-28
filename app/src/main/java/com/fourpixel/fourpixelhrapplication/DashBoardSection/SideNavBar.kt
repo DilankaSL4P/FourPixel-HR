@@ -46,6 +46,7 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
         MenuItem("Work", listOf("Projects", "Tasks",)),
         MenuItem("HR", listOf("Leaves", "Attendance","Holiday", "Appreciation")),
         MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
+        MenuItem("NoticeBoard"),
         MenuItem("About"),
         MenuItem("Logout")
     )
@@ -121,6 +122,8 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
                                 "Work" -> expandedWork.value = !expandedWork.value
                                 "HR" -> expandedHR.value = !expandedHR.value
                                 "Finance" -> expandedFinance.value = !expandedFinance.value
+
+                                "NoticeBoard" -> navController.navigate("noticeboard")
                                 else -> Unit
                             }
                         }
@@ -155,6 +158,7 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
                                 .padding(start = 36.dp, top = 2.dp, bottom = 4.dp)
                                 .clickable {
                                     when (child) {
+
                                         "Tasks" -> navController.navigate("tasks")
                                         "Projects" -> navController.navigate("projects")
 

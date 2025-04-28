@@ -64,11 +64,23 @@ data class Task(
     @SerializedName("heading") val heading: String,
     @SerializedName("due_date") val dueDate: String?,
     @SerializedName("status") val status: String
-    // You can add more fields later as needed
+
 )
 
 data class TaskResponse(
     @SerializedName("data") val data: List<Task>,
+    @SerializedName("meta") val meta: Meta
+)
+
+data class Notice(
+    @SerializedName("id") val id: Int,
+    @SerializedName("heading") val heading: String,
+    @SerializedName("description") val description: String,
+    @SerializedName("to") val to: String
+)
+
+data class NoticeResponse(
+    @SerializedName("data") val data: List<Notice>,
     @SerializedName("meta") val meta: Meta
 )
 
@@ -86,6 +98,11 @@ interface ApiService {
     suspend fun getMyTasks(
         @Header("Authorization") token: String
     ): Response<TaskResponse>
+
+    @GET("api/v1/notice-board")
+    suspend fun getNotices(
+        @Header("Authorization") token: String
+    ): Response<NoticeResponse>
 
 
 }

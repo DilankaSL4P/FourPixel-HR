@@ -56,7 +56,7 @@ fun TaskListScreen(navController: NavController, viewModel: TaskListViewModel = 
 
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = {},
+                onClick = {navController.navigate("addTask")},
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9C75A)),
                 shape = RoundedCornerShape(12.dp)
             ) {

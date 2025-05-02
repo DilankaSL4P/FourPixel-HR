@@ -73,5 +73,9 @@ fun AppNavigation() {
             TaskDetailScreen(taskId, heading, status, dueDate, assignedUser, navController)
         }
 
+        composable("addTask") {
+            AddNewTaskScreen(navController)
+        }
+
     }
 }

@@ -53,16 +53,18 @@ import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddNewTaskScreen() {
+fun AddNewTaskScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
             .padding(horizontal = 16.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(60.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            }
             Spacer(modifier = Modifier.width(8.dp))
             Text("Add New Task", fontSize = 20.sp, fontWeight = FontWeight.Bold,fontFamily = poppinsFontFamily,)
         }

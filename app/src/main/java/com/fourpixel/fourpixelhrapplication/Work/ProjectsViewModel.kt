@@ -1,6 +1,5 @@
 package com.fourpixel.fourpixelhrapplication.Work
 
-
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
@@ -12,7 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class ProjectListViewModel(application: Application) : AndroidViewModel(application) {
+class ProjectsViewModel (application: Application) : AndroidViewModel(application) {
+
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
@@ -60,11 +60,22 @@ class ProjectListViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     private fun updateFilteredProjects() {
+        val statusMapping = mapOf(
+            "Ongoing" to listOf("in progress"),
+            "Pending" to listOf("on hold"),       //Check API Again
+            "Completed" to listOf("completed"),   //Check API Again
+            "All" to null
+        )
+
+        val selected = _selectedFilter.value
+        val statusesToMatch = statusMapping[selected]
+
         val filtered = _allProjects.value.filter { project ->
-            val matchesFilter = _selectedFilter.value == "All" || project.status.equals(_selectedFilter.value, ignoreCase = true)
+            val matchesStatus = statusesToMatch == null || statusesToMatch.contains(project.status.lowercase())
             val matchesSearch = project.projectName.contains(_searchQuery.value, ignoreCase = true)
-            matchesFilter && matchesSearch
+            matchesStatus && matchesSearch
         }
+
         _filteredProjects.value = filtered
     }
 }

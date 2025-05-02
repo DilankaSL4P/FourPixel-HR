@@ -63,7 +63,8 @@ data class Task(
     @SerializedName("id") val id: Int,
     @SerializedName("heading") val heading: String,
     @SerializedName("due_date") val dueDate: String?,
-    @SerializedName("status") val status: String
+    @SerializedName("status") val status: String,
+    @SerializedName("assignedUser") val assignedUser: String
 
 )
 

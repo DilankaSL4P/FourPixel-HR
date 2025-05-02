@@ -9,8 +9,10 @@ import androidx.navigation.navArgument
 import com.fourpixel.fourpixelhrapplication.DashBoardSection.DashboardView
 import com.fourpixel.fourpixelhrapplication.HR.LeavesScreen
 import com.fourpixel.fourpixelhrapplication.LoginSection.LoginScreen
+import com.fourpixel.fourpixelhrapplication.Work.AddNewTaskScreen
 import com.fourpixel.fourpixelhrapplication.Work.NoticeBoardScreen
 import com.fourpixel.fourpixelhrapplication.Work.ProjectListScreen
+import com.fourpixel.fourpixelhrapplication.Work.TaskDetailScreen
 import com.fourpixel.fourpixelhrapplication.Work.TaskListScreen
 
 @Composable
@@ -42,15 +44,34 @@ fun AppNavigation() {
         }
 
         composable("tasks") {
-            TaskListScreen()
+            TaskListScreen(navController)
         }
 
         composable("projects") {
-            ProjectListScreen()
+            ProjectListScreen(navController)
         }
 
         composable("noticeboard") {
             NoticeBoardScreen(navController)
         }
+        composable(
+            "taskDetail/{taskId}/{heading}/{status}/{dueDate}/{assignedUser}",
+            arguments = listOf(
+                navArgument("taskId") { type = NavType.IntType },
+                navArgument("heading") { type = NavType.StringType },
+                navArgument("status") { type = NavType.StringType },
+                navArgument("dueDate") { type = NavType.StringType },
+                navArgument("assignedUser") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val taskId = backStackEntry.arguments?.getInt("taskId") ?: 0
+            val heading = backStackEntry.arguments?.getString("heading") ?: ""
+            val status = backStackEntry.arguments?.getString("status") ?: ""
+            val dueDate = backStackEntry.arguments?.getString("dueDate") ?: ""
+            val assignedUser = backStackEntry.arguments?.getString("assignedUser") ?: ""
+
+            TaskDetailScreen(taskId, heading, status, dueDate, assignedUser, navController)
+        }
+
     }
 }

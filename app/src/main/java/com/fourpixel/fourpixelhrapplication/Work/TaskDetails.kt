@@ -18,22 +18,35 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 @Composable
-fun TaskDetailScreen() {
+fun TaskDetailScreen(taskId: Int,
+                     heading: String,
+                     status: String,
+                     dueDate: String,
+                     assignedUser: String, navController: NavController,) {
+
+    val displayStatus = when (status.lowercase()) {
+        "incomplete" -> "Ongoing"
+        "on hold" -> "Pending"
+        "completed" -> "Completed"
+        else -> status
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp)
     ) {
+        Spacer(modifier = Modifier.height(40.dp))
         // Header
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { /* TODO */ }) {
+            IconButton(onClick = { navController.popBackStack() }) {
                 Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
             }
             Text(
-                text = "Task #P001-02",
+                text = "Task #$taskId",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = poppinsFontFamily
@@ -53,7 +66,7 @@ fun TaskDetailScreen() {
             contentAlignment = Alignment.CenterEnd
         ) {
             Text(
-                text = "Ongoing",
+                text = displayStatus,
                 color = Color(0xFF3B82F6),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
@@ -66,7 +79,7 @@ fun TaskDetailScreen() {
 
         // Title and Subtitle
         Text(
-            text = "Mobile App UI",
+            text = heading,
             fontSize = 14.sp,
             color = Color.Gray,
             fontFamily = poppinsFontFamily
@@ -120,7 +133,7 @@ fun TaskDetailScreen() {
                 Spacer(modifier = Modifier.width(32.dp))
                 Column {
                     Text(
-                        text = "Due Date",
+                        text = dueDate,
                         fontWeight = FontWeight.Bold,
                         fontFamily = poppinsFontFamily
                     )
@@ -149,7 +162,7 @@ fun TaskDetailScreen() {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "J",
+                        text = "S",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontFamily = poppinsFontFamily
@@ -157,7 +170,7 @@ fun TaskDetailScreen() {
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Jhon Doe",
+                    text = assignedUser,
                     fontSize = 14.sp,
                     fontFamily = poppinsFontFamily
                 )
@@ -203,10 +216,3 @@ fun BottomBarItem(icon: ImageVector, label: String, selected: Boolean = false) {
 }
 
 
-@Preview(showBackground = true, name = "Light Mode")
-@Composable
-fun TaskDetailPreview() {
-    MaterialTheme {
-        TaskDetailScreen()
-    }
-}

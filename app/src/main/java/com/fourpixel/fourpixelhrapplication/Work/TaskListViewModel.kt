@@ -63,11 +63,22 @@ class TaskListViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun updateFilteredTasks() {
+        val statusMapping = mapOf(
+            "Ongoing" to listOf("incomplete"),
+            "Pending" to listOf("on hold"),
+            "Completed" to listOf("completed"),
+            "All" to null
+        )
+
+        val selected = _selectedFilter.value
+        val statusesToMatch = statusMapping[selected]
+
         val filtered = _allTasks.value.filter { task ->
-            val matchesFilter = _selectedFilter.value == "All" || task.status.equals(_selectedFilter.value, ignoreCase = true)
+            val matchesStatus = statusesToMatch == null || statusesToMatch.contains(task.status.lowercase())
             val matchesSearch = task.heading.contains(_searchQuery.value, ignoreCase = true)
-            matchesFilter && matchesSearch
+            matchesStatus && matchesSearch
         }
+
         _filteredTasks.value = filtered
     }
 }

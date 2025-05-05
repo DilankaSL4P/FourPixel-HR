@@ -73,6 +73,23 @@ data class TaskResponse(
     @SerializedName("meta") val meta: Meta
 )
 
+//Leaves
+data class LeaveResponse(
+    @SerializedName("data") val data: List<Leave>,
+    @SerializedName("meta") val meta: Meta
+)
+
+data class Leave(
+    @SerializedName("id") val id: Int,
+    @SerializedName("leave_type_id") val leaveTypeId: Int,
+    @SerializedName("leave_date") val leaveDate: String,
+    @SerializedName("reason") val reason: String,
+    @SerializedName("status") val status: String,
+    @SerializedName("duration") val duration: String,
+    @SerializedName("half_day_type") val halfDayType: String?,
+    @SerializedName("unique_id") val uniqueId: String
+)
+
 data class Notice(
     @SerializedName("id") val id: Int,
     @SerializedName("heading") val heading: String,
@@ -104,6 +121,11 @@ interface ApiService {
     suspend fun getNotices(
         @Header("Authorization") token: String
     ): Response<NoticeResponse>
+
+    @GET("api/v1/leave")
+    suspend fun getLeaves(
+        @Header("Authorization") token: String
+    ): Response<LeaveResponse>
 
 
 }

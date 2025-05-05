@@ -62,8 +62,8 @@ class ProjectsViewModel (application: Application) : AndroidViewModel(applicatio
     private fun updateFilteredProjects() {
         val statusMapping = mapOf(
             "Ongoing" to listOf("in progress"),
-            "Pending" to listOf("on hold"),       //Check API Again
-            "Completed" to listOf("completed"),   //Check API Again
+            "Pending" to listOf("on hold"),       //Check API Again!!!!!. Needs to be mapped. backend values are not received from API
+            "Completed" to listOf("completed"),   //Check API Again!!!!
             "All" to null
         )
 
@@ -79,3 +79,6 @@ class ProjectsViewModel (application: Application) : AndroidViewModel(applicatio
         _filteredProjects.value = filtered
     }
 }
+
+
+//Filters are not working. and count is not there.!!!!!!!!

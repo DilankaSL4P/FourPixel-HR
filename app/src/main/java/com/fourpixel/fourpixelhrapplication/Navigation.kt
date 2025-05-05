@@ -40,7 +40,7 @@ fun AppNavigation() {
         }
 
         composable("leaves") {
-            LeavesScreen()
+            LeavesScreen(navController)
         }
 
         composable("tasks") {
@@ -50,6 +50,8 @@ fun AppNavigation() {
         composable("projects") {
             ProjectListScreen(navController)
         }
+
+
 
         composable("noticeboard") {
             NoticeBoardScreen(navController)

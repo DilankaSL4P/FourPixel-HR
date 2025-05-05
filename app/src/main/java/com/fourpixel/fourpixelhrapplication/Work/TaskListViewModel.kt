@@ -82,3 +82,5 @@ class TaskListViewModel(application: Application) : AndroidViewModel(application
         _filteredTasks.value = filtered
     }
 }
+
+//Filters are not working. and count is not there.!!!!!!!!

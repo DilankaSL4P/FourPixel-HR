@@ -77,6 +77,7 @@ fun TaskListScreen(navController: NavController, viewModel: TaskListViewModel = 
         // Filter Buttons
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(listOf("All", "Ongoing", "Pending", "Completed")) { status ->
+
                 FilterChip(
                     text = status,
                     selected = selectedFilter == status,

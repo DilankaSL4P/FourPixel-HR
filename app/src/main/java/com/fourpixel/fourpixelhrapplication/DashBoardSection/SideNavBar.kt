@@ -161,6 +161,7 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
 
                                         "Tasks" -> navController.navigate("tasks")
                                         "Projects" -> navController.navigate("projects")
+                                        "Leaves" -> navController.navigate("leaves")
 
                                     }
                                 }

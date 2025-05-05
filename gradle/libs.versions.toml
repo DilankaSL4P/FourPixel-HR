@@ -12,6 +12,7 @@ playServicesGcm = "17.0.0"
 playServicesTasks = "18.2.0"
 runner = "1.6.1"
 biometricKtx = "1.1.0"
+firebaseAppdistributionGradle = "5.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -32,6 +33,7 @@ play-services-gcm = { group = "com.google.android.gms", name = "play-services-gc
 play-services-tasks = { group = "com.google.android.gms", name = "play-services-tasks", version.ref = "playServicesTasks" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-biometric-ktx = { group = "androidx.biometric", name = "biometric-ktx", version.ref = "biometricKtx" }
+firebase-appdistribution-gradle = { group = "com.google.firebase", name = "firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

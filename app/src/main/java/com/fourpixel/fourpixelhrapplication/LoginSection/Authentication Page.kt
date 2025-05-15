@@ -122,7 +122,11 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
                             val encodedImageUrl = URLEncoder.encode(updatedImageUrl, "UTF-8")
                             val encodedUserRole = URLEncoder.encode(updatedUserRole, "UTF-8")
 
-                            navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole")
+                            navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole"){
+                                popUpTo("login") {
+                                    inclusive = true
+                                }
+                            }
                         }
                     }
                 }
@@ -143,7 +147,12 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
                         val encodedUserName = URLEncoder.encode(updatedUserName, "UTF-8")
                         val encodedImageUrl = URLEncoder.encode(updatedImageUrl, "UTF-8")
                         val encodedUserRole = URLEncoder.encode(updatedUserRole, "UTF-8")
-                        navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole")
+                        navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole"){
+                            popUpTo("login") {
+                                inclusive = true // Removes the login screen from popping back
+                            }
+                            launchSingleTop = true
+                        }
                     }
                 }
             },

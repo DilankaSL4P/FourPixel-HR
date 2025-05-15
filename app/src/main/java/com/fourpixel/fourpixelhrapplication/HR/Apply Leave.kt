@@ -1,6 +1,6 @@
 package com.fourpixel.fourpixelhrapplication.HR
 
-import androidx.compose.ui.tooling.preview.Preview
+
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,25 +8,26 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.outlined.ArrowBack
+
 import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
+
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.motionEventSpy
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ApplyLeavesScreen() {
+fun ApplyLeavesScreen(navController: NavController) {
     val context = LocalContext.current
 
 
@@ -68,7 +69,7 @@ fun ApplyLeavesScreen() {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(bottom = 24.dp)
         ) {
-            IconButton(onClick = { }) {
+            IconButton(onClick = { navController.popBackStack() }) {
                 Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
             }
             Text(

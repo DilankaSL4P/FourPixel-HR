@@ -41,7 +41,10 @@ import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 data class MenuItem(val label: String, val children: List<String> = emptyList())
 
 @Composable
-fun sideDrawer(navController: NavController, userName: String, userImageUrl: String, userRole: String) {
+fun sideDrawer(navController: NavController,
+               userName: String,
+               userImageUrl: String,
+               userRole: String ) {
 
     val menuItems = listOf(
         MenuItem("Dashboard"),
@@ -121,11 +124,27 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
                         .fillMaxWidth()
                         .clickable {
                             when (item.label) {
+                                "Dashboard" -> {
+                                    val encodedUserName = java.net.URLEncoder.encode(userName, "UTF-8")
+                                    val encodedImageUrl = java.net.URLEncoder.encode(userImageUrl, "UTF-8")
+                                    val encodedUserRole = java.net.URLEncoder.encode(userRole, "UTF-8")
+
+                                    navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole")
+                                }
+
+
                                 "Work" -> expandedWork.value = !expandedWork.value
                                 "HR" -> expandedHR.value = !expandedHR.value
                                 "Finance" -> expandedFinance.value = !expandedFinance.value
 
                                 "NoticeBoard" -> navController.navigate("noticeboard")
+                                "Logout" -> {
+
+                                    navController.navigate("login") {
+                                        popUpTo(0) // clears the backstack
+                                    }
+                                }
+
                                 else -> Unit
                             }
                         }

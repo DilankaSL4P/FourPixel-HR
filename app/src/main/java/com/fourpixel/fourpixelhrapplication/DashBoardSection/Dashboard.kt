@@ -68,7 +68,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-
+import androidx.activity.compose.BackHandler
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,6 +101,10 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     var showNoticeBanner by remember { mutableStateOf(true) } // << NEW: control banner visibility
     var showNoticePopup by remember { mutableStateOf(false) } // << NEW: control popup visibility
 
+    BackHandler {
+        // Do nothing when back button is pressed
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -111,7 +115,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                     navController = navController,
                     userName = userName,
                     userImageUrl = userImageUrl,
-                    userRole = userRole
+                    userRole = userRole,
                 )
             }
         }
@@ -272,7 +276,8 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
-                        onClick = { viewModel.toggleClockIn() },
+                        onClick = { viewModel.toggleClockIn()
+                            viewModel.clockInToServer()},
                         enabled = isSelectionMade,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isRunning) Color.Gray else Color(0xFFFFC107)

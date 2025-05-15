@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import com.fourpixel.fourpixelhrapplication.client.ApiService
+import com.fourpixel.fourpixelhrapplication.client.ClockInRequest
 import com.fourpixel.fourpixelhrapplication.client.Notice
 import com.fourpixel.fourpixelhrapplication.client.RetrofitClient
 import kotlinx.coroutines.launch
@@ -183,6 +184,26 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 }
             } catch (e: Exception) {
                 println("DEBUG: Exception while fetching notices - ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun clockInToServer() {
+        val token = sharedPreferences.getString("auth_token", null) ?: return
+
+        val workingFrom = selectedOption.value
+
+        viewModelScope.launch {
+            try {
+                val response = apiService.clockIn("Bearer $token", ClockInRequest(workingFrom))
+                if (response.isSuccessful && response.body()?.success == true) {
+                    println("DEBUG: Clock-in successful - ${response.body()?.message}")
+                    // You can update UI state here or show a Snackbar
+                } else {
+                    println("DEBUG: Clock-in failed - ${response.code()} ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Clock-in exception - ${e.localizedMessage}")
             }
         }
     }

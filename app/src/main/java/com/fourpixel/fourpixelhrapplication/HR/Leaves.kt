@@ -63,7 +63,7 @@ fun LeavesScreen(
             )
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = { /* Navigate to Apply Leave */ },
+                onClick = { navController.navigate("applyLeave") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9C75A)),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -81,12 +81,12 @@ fun LeavesScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Filter Chips
+        // Filter Chips - These show the UI-friendly names
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val filters = listOf("All") + listOf("Annual", "Casual", "Medical")
+            val filters = listOf("All", "Casual", "Medical", "Annual")
             filters.forEach { filter ->
                 val count = viewModel.getCount(filter)
                 FilterChip(
@@ -209,7 +209,7 @@ fun LeaveCard(leave: Leave) {
         1 -> Pair(Color(0xFF88B04B), "Casual")
         2 -> Pair(Color(0xFFF9B232), "Medical")
         3 -> Pair(Color(0xFFD8A568), "Annual")
-        else -> Pair(Color.LightGray, leave.leaveTypeId)
+        else -> Pair(Color.LightGray, "Unknown")
     }
 
     val leaveDuration = when (leave.duration){
@@ -254,9 +254,8 @@ fun LeaveCard(leave: Leave) {
                     .background(typeColor, RoundedCornerShape(6.dp))
                     .padding(horizontal = 12.dp, vertical = 4.dp)
             ) {
-
                 Text(
-                    text = typeName.toString(),
+                    text = typeName,
                     fontSize = 12.sp,
                     fontFamily = poppinsFontFamily,
                     color = Color.Black
@@ -278,4 +277,3 @@ fun LeaveCard(leave: Leave) {
         }
     }
 }
-

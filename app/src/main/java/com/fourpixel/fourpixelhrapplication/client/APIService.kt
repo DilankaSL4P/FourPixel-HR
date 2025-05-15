@@ -102,6 +102,16 @@ data class NoticeResponse(
     @SerializedName("meta") val meta: Meta
 )
 
+//ClockIN
+data class ClockInRequest(
+    @SerializedName("working_from") val workingFrom: String
+)
+
+data class ClockInResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("message") val message: String
+)
+
 
 interface ApiService {
     @POST("api/v1/auth/login")
@@ -126,6 +136,12 @@ interface ApiService {
     suspend fun getLeaves(
         @Header("Authorization") token: String
     ): Response<LeaveResponse>
+
+    @POST("api/v1/attendance/clock-in")
+    suspend fun clockIn(
+        @Header("Authorization") token: String,
+        @Body body: ClockInRequest
+    ): Response<ClockInResponse>
 
 
 }

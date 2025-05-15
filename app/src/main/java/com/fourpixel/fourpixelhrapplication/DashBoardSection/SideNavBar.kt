@@ -32,8 +32,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
+import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.fourpixel.fourpixelhrapplication.R
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 data class MenuItem(val label: String, val children: List<String> = emptyList())
@@ -169,6 +171,22 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
                     }
                 }
             }
+        }
+        Spacer(modifier = Modifier.height(230.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(modifier = Modifier.width(24.dp))
+            Text(
+                text = "Powered By",
+                fontFamily = poppinsFontFamily,
+
+                fontSize = 14.sp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Image(
+                painter = painterResource(id = R.drawable.bsuite),
+                contentDescription = "BSuite Logo",
+                modifier = Modifier.size(60.dp)
+            )
         }
     }
 }

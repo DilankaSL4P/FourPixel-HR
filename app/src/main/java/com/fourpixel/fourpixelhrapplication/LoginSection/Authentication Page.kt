@@ -199,11 +199,16 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
             modifier = Modifier.clickable { /* Handle domain sign-in */ }
         )
 
-        Spacer(modifier = Modifier.height(80.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Text(text = "Powered by", fontSize = 14.sp, color = Color.Gray,fontFamily = poppinsFontFamily)
         }
+        Image(
+            painter = painterResource(id = R.drawable.bsuite),
+            contentDescription = "BSuite Logo",
+            modifier = Modifier.size(100.dp)
+        )
     }
 }
 

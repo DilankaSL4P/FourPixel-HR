@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.ui.res.painterResource
@@ -41,18 +42,18 @@ import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 data class MenuItem(val label: String, val children: List<String> = emptyList())
 
 @Composable
-fun sideDrawer(navController: NavController,
+fun SideDrawer(navController: NavController,
                userName: String,
                userImageUrl: String,
                userRole: String ) {
 
     val menuItems = listOf(
         MenuItem("Dashboard"),
-        MenuItem("Work", listOf("Projects", "Tasks",)),
-        MenuItem("HR", listOf("Leaves", "Attendance","Holiday", "Appreciation")),
-        MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
-        MenuItem("NoticeBoard"),
-        MenuItem("About"),
+        MenuItem("Work", listOf("Projects", "Tasks")),
+        MenuItem("HR", listOf("Leaves")),
+        //MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
+        //MenuItem("NoticeBoard"),
+        //MenuItem("About"),
         MenuItem("Logout")
     )
 
@@ -75,7 +76,7 @@ fun sideDrawer(navController: NavController,
                     .background(Color.Black, shape = CircleShape)
                     .wrapContentSize(Alignment.Center)
             ) {
-                // Show first letter of name
+                // Showing the user Image
                 Image(
                     painter = rememberAsyncImagePainter(userImageUrl),
                     contentDescription = "Profile Image in Drawer",
@@ -160,7 +161,7 @@ fun sideDrawer(navController: NavController,
                     )
                     if (isExpandable) {
                         Icon(
-                            imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowDown else Icons.Outlined.KeyboardArrowRight,
+                            imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowDown else Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                             contentDescription = "Expand/Collapse",
                             tint = Color.Black
                         )

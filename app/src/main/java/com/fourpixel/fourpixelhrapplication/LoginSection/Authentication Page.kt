@@ -1,7 +1,7 @@
 package com.fourpixel.fourpixelhrapplication.LoginSection
 
-import android.content.Context
-import android.content.SharedPreferences
+
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,13 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.rememberNavController
-
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import com.fourpixel.fourpixelhrapplication.R
@@ -48,8 +45,8 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
     val loginError by viewModel.loginError.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val userName by viewModel.userName.collectAsState()
+    //val coroutineScope = rememberCoroutineScope()
+    //val userName by viewModel.userName.collectAsState()
 
     Column(
         modifier = Modifier
@@ -107,7 +104,7 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done // Enables "Done" action on keyboard
+                imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
@@ -133,6 +130,17 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
             ),
             modifier = Modifier.fillMaxWidth()
         )
+        // Error message display - Added this section
+        if (loginError.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = loginError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = poppinsFontFamily,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         Spacer(modifier = Modifier.height(18.dp))
 
@@ -219,10 +227,17 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewMo
             modifier = Modifier.size(100.dp)
         )
     }
+    // Alternative: Use a Snackbar for error messages
+    // You will need to add this import: import androidx.compose.material3.SnackbarHost
+    LaunchedEffect(loginError) {
+        if (loginError.isNotEmpty()) {
+            Toast.makeText(context, loginError, Toast.LENGTH_SHORT).show()
+        }
+    }
 }
 
-//
+/*
 fun getAuthToken(context: Context): String? {
     val sharedPreferences: SharedPreferences = context.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
     return sharedPreferences.getString("auth_token", null)
-}
+}*/

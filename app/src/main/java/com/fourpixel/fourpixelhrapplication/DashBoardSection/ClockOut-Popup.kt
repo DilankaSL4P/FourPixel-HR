@@ -40,8 +40,9 @@ import com.fourpixel.fourpixelhrapplication.R
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 
-@Composable
-fun DialogWithImage(
+/*@Composable
+fun ClockOutDialog(
+    viewModel: DashboardViewModelJP,
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit,
     painter: Painter,
@@ -54,7 +55,7 @@ fun DialogWithImage(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(500.dp)
+                .height(600.dp)
                 ,
             shape = RoundedCornerShape(16.dp),
         ) {
@@ -96,7 +97,7 @@ fun DialogWithImage(
                         .height(220.dp)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 //Text
                 Text(
@@ -107,7 +108,7 @@ fun DialogWithImage(
                     fontSize = 24.sp
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 //Body Text
                 Text(
@@ -122,11 +123,14 @@ fun DialogWithImage(
                         .padding(start = 20.dp, end = 20.dp),
                     textAlign = TextAlign.Center)
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 //Clock-Out Button
                 Button(
-                        onClick = { isRunning = false },
+                        onClick = {
+                            isRunning = false
+                            onConfirmation()
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor =  Color(0xFFF9B232)
                         ),
@@ -148,18 +152,8 @@ fun DialogWithImage(
     }
 
 
-@Preview(showBackground = true)
-@Composable
-fun DialogWithImagePreview() {
-    DialogWithImage(
-        onDismissRequest = {},
-        onConfirmation = {},
-        painter = painterResource(id = R.drawable.wrapup),
-        imageDescription = "Holiday image"
-    )
-}
 
 
 
 
-
+*/

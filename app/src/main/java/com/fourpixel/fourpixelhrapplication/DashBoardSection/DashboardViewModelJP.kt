@@ -3,9 +3,6 @@ package com.fourpixel.fourpixelhrapplication.DashBoardSection
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
@@ -15,7 +12,8 @@ import com.fourpixel.fourpixelhrapplication.client.ApiService
 import com.fourpixel.fourpixelhrapplication.client.ClockInRequest
 import com.fourpixel.fourpixelhrapplication.client.Notice
 import com.fourpixel.fourpixelhrapplication.client.RetrofitClient
-import kotlinx.coroutines.launch
+import com.fourpixel.fourpixelhrapplication.client.TodayAttendanceData
+import kotlinx.coroutines.Job
 
 
 class DashboardViewModelJP(application: Application) : AndroidViewModel(application) {
@@ -55,11 +53,10 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _projectCount = MutableStateFlow(0)
     val projectCount = _projectCount.asStateFlow()
 
+    private val _todayAttendance = MutableStateFlow<TodayAttendanceData?>(null)
+    val todayAttendance: StateFlow<TodayAttendanceData?> = _todayAttendance.asStateFlow()
 
-
-
-
-
+    private var timerJob: Job? = null
 
 
     init {
@@ -71,7 +68,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
 
     fun setUserName(name: String) {
         _userName.value = name
-        saveUserName(name) // Save it persistently
+        saveUserName(name)
     }
 
     private fun saveUserName(name: String) {
@@ -87,25 +84,35 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     }
 
     fun toggleClockIn() {
+        // Only clock in if not already running
         if (!_isRunning.value) {
             _isRunning.value = true
-            _elapsedTime.value = 0L // Reset elapsed time when starting
+            _elapsedTime.value = 0L // Reset elapsed time when starting a new session
             startTimer()
-        } else {
-            _isRunning.value = false
+            // clockInToServer() is called directly from the UI onClick, not here.
+            // This method just handles the timer state.
         }
     }
 
     fun toggleClockOut() {
         if (_isRunning.value) {
             _isRunning.value = false
-            _elapsedTime.value = 0L // Reset elapsed time on clock-out
+            _elapsedTime.value = 0L
+            _showDialog.value = true
+        }
+    }
+
+    fun showClockOutDialog() {
+        // Only show dialog if the timer is actually running
+        if (_isRunning.value) {
             _showDialog.value = true
         }
     }
 
     fun dismissDialog() {
         _showDialog.value = false
+        // Important: If dialog is dismissed, the clock should remain running.
+        // No change to _isRunning.value here.
     }
 
     fun setSelectedOption(option: String) {
@@ -118,15 +125,19 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     }
 
     private fun startTimer() {
-        viewModelScope.launch {
-            isRunning.collectLatest { running ->
-                if (running) {
-                    while (running) {
-                        delay(1000L)
-                        _elapsedTime.value += 1
-                    }
-                }
+        // Cancel any existing timer job to prevent multiple timers running
+        timerJob?.cancel()
+
+        timerJob = viewModelScope.launch {
+            // CollectLatest is good, but the while(running) loop inside it is more robust
+            // to ensure continuous operation as long as _isRunning.value is true.
+            // We'll use a direct check of _isRunning.value within the loop.
+            while (_isRunning.value) { // Continue as long as _isRunning is true
+                delay(1000L)
+                _elapsedTime.value += 1
             }
+            // Once _isRunning becomes false, the loop will exit, and the job will complete.
+            // This handles the stopping of the timer cleanly.
         }
     }
 
@@ -139,7 +150,10 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 if (response.isSuccessful) {
                     val total = response.body()?.meta?.paging?.total ?: 0
                     _projectCount.value = total
-                    updateStatus(assigned = total, pending = 0) // Optional: update assigned projects
+                    updateStatus(
+                        assigned = total,
+                        pending = 0
+                    ) // Optional: update assigned projects
                 } else {
                     println("DEBUG: Error fetching projects - ${response.code()}")
                 }
@@ -188,9 +202,26 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    private fun fetchTodayAttendance() {
+        viewModelScope.launch {
+            try {
+
+                val token = sharedPreferences.getString("auth_token", null) ?: return@launch
+                val response = apiService.getTodayAttendance("Bearer $token")
+                if (response.isSuccessful) {
+                    _todayAttendance.value = response.body()?.data
+                    println("DEBUG: Fetched today’s attendance - ${response.body()?.data}")
+                } else {
+                    println("DEBUG: Failed to fetch today's attendance - ${response.code()}")
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Error fetching today's attendance - ${e.localizedMessage}")
+            }
+        }
+    }
+
     fun clockInToServer() {
         val token = sharedPreferences.getString("auth_token", null) ?: return
-
         val workingFrom = selectedOption.value
 
         viewModelScope.launch {
@@ -198,9 +229,16 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 val response = apiService.clockIn("Bearer $token", ClockInRequest(workingFrom))
                 if (response.isSuccessful && response.body()?.success == true) {
                     println("DEBUG: Clock-in successful - ${response.body()?.message}")
-                    // You can update UI state here or show a Snackbar
+
+                    // Now fetch today's attendance
+                    fetchTodayAttendance()
+
                 } else {
-                    println("DEBUG: Clock-in failed - ${response.code()} ${response.errorBody()?.string()}")
+                    println(
+                        "DEBUG: Clock-in failed - ${response.code()} ${
+                            response.errorBody()?.string()
+                        }"
+                    )
                 }
             } catch (e: Exception) {
                 println("DEBUG: Clock-in exception - ${e.localizedMessage}")
@@ -208,5 +246,51 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun confirmClockOut(reason: String) {
+        val token = sharedPreferences.getString("auth_token", null) ?: return
 
+        viewModelScope.launch {
+            try {
+                val requestBody = mapOf("reason" to reason)
+                val response = apiService.clockOut("Bearer $token", requestBody)
+
+                // --- START OF MODIFICATION ---
+                // Always reset UI state for timer upon confirmation, regardless of API success.
+                // This makes the UI responsive.
+                _isRunning.value = false // Stop the timer
+                timerJob?.cancel()       // Cancel the coroutine job
+                _elapsedTime.value = 0L  // Reset elapsed time to 0
+                _showDialog.value = false // Dismiss the dialog
+                // --- END OF MODIFICATION ---
+
+                if (response.isSuccessful && response.body() != null) {
+                    println("DEBUG: Clock-out successful - ${response.body()?.message}")
+                    fetchTodayAttendance() // Fetch updated attendance if successful
+                } else {
+                    println(
+                        "DEBUG: Clock-out failed - ${response.code()} ${
+                            response.errorBody()?.string()
+                        }"
+                    )
+                    // TODO: You might want to show a Toast or Snackbar to the user
+                    // indicating that clock-out on the server failed.
+                }
+            } catch (e: Exception) {
+                println("DEBUG: Clock-out exception - ${e.localizedMessage}")
+                // Ensure UI state is reset even if there's a network/other exception
+                _isRunning.value = false
+                timerJob?.cancel()
+                _elapsedTime.value = 0L
+                _showDialog.value = false
+                // TODO: You might want to show a Toast or Snackbar to the user
+                // indicating a network error.
+            }
+        }
+    }
+
+    // Override onCleared to cancel any running jobs when the ViewModel is destroyed
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
+    }
 }

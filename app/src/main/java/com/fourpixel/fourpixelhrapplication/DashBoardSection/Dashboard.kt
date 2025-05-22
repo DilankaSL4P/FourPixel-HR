@@ -5,10 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-
 import androidx.compose.foundation.layout.Column
-
-
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,7 +42,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
@@ -61,16 +57,19 @@ import androidx.compose.ui.text.TextStyle
 import androidx.navigation.NavController
 import com.fourpixel.fourpixelhrapplication.R
 import coil.compose.rememberAsyncImagePainter
-
-
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun DashboardView(navController: NavController, userName: String, userImageUrl: String, userRole: String) {
     val viewModel: DashboardViewModelJP = androidx.lifecycle.viewmodel.compose.viewModel()
@@ -82,11 +81,11 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     val displayedUserName by viewModel.userName.collectAsState()
     val isRunning by viewModel.isRunning.collectAsState()
     val elapsedTime by viewModel.elapsedTime.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
+    //val coroutineScope = rememberCoroutineScope()
 
-    val currentDate = Calendar.getInstance().time
-    val dateFormat = SimpleDateFormat("EEEE, MMMM d'th', yyyy", Locale.getDefault())
-    val formattedDate = dateFormat.format(currentDate)
+    //val currentDate = Calendar.getInstance().time
+    //val dateFormat = SimpleDateFormat("EEEE, MMMM 'th', yyyy", Locale.getDefault())
+    //val formattedDate = dateFormat.format(currentDate)
 
     val showDialog by viewModel.showDialog.collectAsState()
     var isSelectionMade by remember { mutableStateOf(false) }
@@ -98,8 +97,8 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     val pendingTasks by viewModel.pendingTasks.collectAsState()
 
     val notices by viewModel.notices.collectAsState()
-    var showNoticeBanner by remember { mutableStateOf(true) } // << NEW: control banner visibility
-    var showNoticePopup by remember { mutableStateOf(false) } // << NEW: control popup visibility
+    var showNoticeBanner by remember { mutableStateOf(true) }
+    var showNoticePopup by remember { mutableStateOf(false) }
 
     BackHandler {
         // Do nothing when back button is pressed
@@ -111,7 +110,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
             ModalDrawerSheet(
                 modifier = Modifier.width(280.dp)
             ) {
-                sideDrawer(
+                SideDrawer(
                     navController = navController,
                     userName = userName,
                     userImageUrl = userImageUrl,
@@ -133,6 +132,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    //Navigation Drawer
                     IconButton(
                         onClick = {
                             scope.launch {
@@ -148,6 +148,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        //Notifications
                         IconButton(
                             onClick = { /* Show notifications */ },
                             modifier = Modifier.background(Color(0xFFF2F2F2), shape = CircleShape)
@@ -169,6 +170,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
             item { Spacer(modifier = Modifier.height(20.dp)) }
 
+            //New Notice Pop up
             if (notices.isNotEmpty() && showNoticeBanner) {
                 item {
                     NoticeBanner(notice = notices.toString()) {
@@ -180,10 +182,11 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
             item { Spacer(modifier = Modifier.height(16.dp)) }
 
+            //TEXT
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Welcome, $displayedUserName 👋",
+                        text = "Welcome, $displayedUserName !",
                         fontFamily = poppinsFontFamily,
                         style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
                     )
@@ -192,6 +195,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
             item { Spacer(modifier = Modifier.height(6.dp)) }
 
+            //Date Display Function
             item {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
@@ -275,10 +279,13 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Clock-in Button
                     Button(
-                        onClick = { viewModel.toggleClockIn()
-                            viewModel.clockInToServer()},
-                        enabled = isSelectionMade,
+                        onClick = {
+                            viewModel.toggleClockIn() // Only starts the timer in ViewModel
+                            viewModel.clockInToServer() // Makes the API call
+                        },
+                        enabled = isSelectionMade && !isRunning,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isRunning) Color.Gray else Color(0xFFFFC107)
                         ),
@@ -294,11 +301,14 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                             fontSize = 18.sp
                         )
                     }
+
+                    //ClockOut Button
                     Button(
-                        onClick = { viewModel.toggleClockOut() },
+                        onClick = { viewModel.showClockOutDialog() },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (!isRunning) Color.Gray else Color(0xFFFFC107)
                         ),
+                        enabled = isRunning,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .weight(1f)
@@ -316,16 +326,23 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
             if (showDialog) {
                 item {
-                    DialogWithImage(
-                        onDismissRequest = { viewModel.dismissDialog() },
-                        onConfirmation = { viewModel.dismissDialog() },
+                    ClockOutDialog(
+                        viewModel = viewModel, // Pass the ViewModel
+                        onDismissRequest = {
+                            // When dialog is dismissed without confirmation,
+                            // we only hide the dialog, the timer keeps running.
+                            viewModel.dismissDialog()
+                        },
+                        onConfirmation = {
+                            // This lambda is called when the dialog's internal Clock-out button is pressed.
+                            // This is where the timer stops and the API call is made.
+                            viewModel.confirmClockOut("Work completed") // Use the new confirmClockOut
+                        },
                         painter = painterResource(id = R.drawable.wrapup),
                         imageDescription = "Clock-out confirmation"
                     )
                 }
             }
-
-
 
             item { Spacer(modifier = Modifier.height(16.dp)) }
 
@@ -404,8 +421,15 @@ fun DropdownMenu(viewModel: DashboardViewModelJP, onSelectionMade: (Boolean) -> 
     val selectedOption by viewModel.selectedOption.collectAsState()
     val options = listOf("Office", "Work from Home")
 
-    var dropdownWidth by remember { mutableStateOf(0) }
-    var isSelected by remember { mutableStateOf(false) } // Track if an option is selected
+    var dropdownWidth by remember { mutableIntStateOf(0) }
+    var isSelected by remember { mutableStateOf(false) }
+
+    LaunchedEffect(selectedOption) {
+        // Update displayText whenever ViewModel's selectedOption changes
+        displayText = selectedOption
+        isSelected = selectedOption != "Office"
+        onSelectionMade(isSelected) // Inform parent about selection
+    }
 
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
         Box(
@@ -486,7 +510,7 @@ fun NoticePopup(notice: String, onDismiss: () -> Unit) {
         onDismissRequest = { onDismiss() },
         title = {
             Text(
-                text = "Notice",
+                text = notice,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
@@ -537,4 +561,118 @@ fun getDayWithSuffix(day: Int): String {
         else -> "$day" + "th"
     }
 }
+
+@Composable
+fun ClockOutDialog(
+    viewModel: DashboardViewModelJP,
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    painter: Painter,
+    imageDescription: String,
+) {
+    //var isRunning by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        // Draw a rectangle shape with rounded corners inside the dialog
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(600.dp)
+            ,
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            )
+            {
+                //Close Button
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 20.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(
+                        onClick = { onDismissRequest() },
+                        modifier = Modifier.size(24.dp)
+
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                //Image
+                Image(
+                    painter = painterResource(id = R.drawable.wrapup),
+                    contentDescription = imageDescription,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .height(220.dp)
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                //Text
+                Text(
+                    text = "Time to Wrap Up!",
+                    fontFamily = poppinsFontFamily,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                //Body Text
+                Text(
+                    text = "Are you ready to clock out? Please confirm to finish up for today. Thank you for your hard work!",
+
+                    color = Color.Gray,
+                    fontFamily = poppinsFontFamily,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 10.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 20.dp),
+                    textAlign = TextAlign.Center)
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                //Clock-Out Button
+                Button(
+                    onClick = {
+                        // This is the actual confirmation:
+                        onConfirmation() // This will call viewModel.confirmClockOut
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        // This button always has the same color for confirmation
+                        containerColor =  Color(0xFFF9B232)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .height(40.dp).fillMaxWidth()
+                        .padding(start = 20.dp, end = 20.dp)
+                ) {
+                    Text(
+                        text = "Clock-out",
+                        fontFamily = poppinsFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+
 

@@ -7,6 +7,7 @@ import com.google.gson.annotations.SerializedName
 import retrofit2.http.GET
 import retrofit2.http.Header
 
+//Login
 data class LoginRequest(
     @SerializedName("email") val email: String,
     @SerializedName("password") val password: String
@@ -14,7 +15,7 @@ data class LoginRequest(
 
 data class LoginResponse(
     @SerializedName("message") val message: String?,
-    @SerializedName("data") val data: UserData // Fix: Match the API structure
+    @SerializedName("data") val data: UserData
 
 )
 
@@ -23,11 +24,12 @@ data class UserData(
     @SerializedName("user") val user: User
 )
 
+//User Data
 data class User(
     @SerializedName("name") val name: String,
     @SerializedName("email") val email: String,
     @SerializedName("image_url") val imageUrl: String?,
-    @SerializedName("roles") val roles: List<Role>? // ← Add this line
+    @SerializedName("roles") val roles: List<Role>?
 )
 
 data class Role(
@@ -35,7 +37,7 @@ data class Role(
     @SerializedName("display_name") val displayName: String
 )
 
-//Project
+//Project Data
 data class Project(
     @SerializedName("id") val id: Int,
     @SerializedName("project_name") val projectName: String,
@@ -58,7 +60,7 @@ data class ProjectResponse(
     @SerializedName("meta") val meta: Meta
 )
 
-//Task
+//Task Data
 data class Task(
     @SerializedName("id") val id: Int,
     @SerializedName("heading") val heading: String,
@@ -90,6 +92,7 @@ data class Leave(
     @SerializedName("unique_id") val uniqueId: String
 )
 
+//Notices
 data class Notice(
     @SerializedName("id") val id: Int,
     @SerializedName("heading") val heading: String,
@@ -112,14 +115,35 @@ data class ClockInResponse(
     @SerializedName("message") val message: String
 )
 
+//Clock out classes
+data class TodayAttendanceResponse(
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: TodayAttendanceData?
+)
+
+data class TodayAttendanceData(
+    @SerializedName("id") val id: Int,
+    @SerializedName("clock_in_time") val clockInTime: String,
+    @SerializedName("clock_out_time") val clockOutTime: String?,
+    @SerializedName("work_from_type") val workFromType: String?,
+    @SerializedName("working_from") val workingFrom: String?,
+    @SerializedName("currentLatitude") val currentLatitude: String?,
+    @SerializedName("currentLongitude") val currentLongitude: String?
+)
+
+data class GenericResponse(
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: Any?
+)
+
 
 interface ApiService {
     @POST("api/v1/auth/login")
     suspend fun loginUser(@Body request: LoginRequest): Response<LoginResponse>
 
-    @retrofit2.http.GET("api/v1/project")
+    @GET("api/v1/project")
     suspend fun getProjects(
-        @retrofit2.http.Header("Authorization") token: String
+        @Header("Authorization") token: String
     ): Response<ProjectResponse>
 
     @GET("api/v1/task/me?order=id desc&limit=1000&filters=board_column_id ne \"4\" and task_user_id eq \"2\"&fields=id,heading,due_date,status,is_private,project{id,project_name},users{id,name,image,image_url},board_column{id,column_name,slug,label_color},category{id,category_name}")
@@ -142,6 +166,17 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body body: ClockInRequest
     ): Response<ClockInResponse>
+
+    @GET("api/v1/attendance/today")
+    suspend fun getTodayAttendance(
+        @Header("Authorization") token: String
+    ): Response<TodayAttendanceResponse>
+
+    @POST("api/v1/attendance/clock-out")
+    suspend fun clockOut(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, String>
+    ): Response<GenericResponse>
 
 
 }

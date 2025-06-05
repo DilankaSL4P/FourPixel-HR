@@ -38,7 +38,8 @@ import java.net.URLEncoder
 
 
 @Composable
-fun LoginScreen(navController: NavController, viewModel: LoginViewModel = viewModel()) {
+fun LoginScreen(navController: NavController,
+                viewModel: LoginViewModel = viewModel(),) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
     val showPassword by viewModel.showPassword.collectAsState()

@@ -6,6 +6,10 @@ import retrofit2.http.POST
 import com.google.gson.annotations.SerializedName
 import retrofit2.http.GET
 import retrofit2.http.Header
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import java.util.concurrent.TimeUnit
+import com.google.gson.JsonElement
 
 //Login
 data class LoginRequest(
@@ -105,14 +109,19 @@ data class NoticeResponse(
     @SerializedName("meta") val meta: Meta
 )
 
-//ClockIN
+// ClockIN
 data class ClockInRequest(
-    @SerializedName("working_from") val workingFrom: String
+    @SerializedName("working_from") val workingFrom: String,
+    // Add these fields
+    @SerializedName("currentLatitude") val currentLatitude: Double?, // Or String, depending on API. Double is typical.
+    @SerializedName("currentLongitude") val currentLongitude: Double? // Or String, depending on API. Double is typical.
 )
 
 data class ClockInResponse(
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("message") val message: String
+    @SerializedName("status") val status: String,
+    @SerializedName("message") val message: String,
+    @SerializedName("data") val data: JsonElement?
+
 )
 
 //Clock out classes

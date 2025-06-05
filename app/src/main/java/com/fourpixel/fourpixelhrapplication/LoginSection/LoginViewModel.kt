@@ -141,7 +141,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private fun saveAuthToken(token: String) {
         with(sharedPreferences.edit()) {
             putString("auth_token", token)
-            apply()
+            commit()
         }
     }
 

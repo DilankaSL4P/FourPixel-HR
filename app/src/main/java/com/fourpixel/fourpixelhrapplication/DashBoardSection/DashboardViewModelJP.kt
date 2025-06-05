@@ -3,6 +3,8 @@ package com.fourpixel.fourpixelhrapplication.DashBoardSection
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
@@ -13,7 +15,14 @@ import com.fourpixel.fourpixelhrapplication.client.ClockInRequest
 import com.fourpixel.fourpixelhrapplication.client.Notice
 import com.fourpixel.fourpixelhrapplication.client.RetrofitClient
 import com.fourpixel.fourpixelhrapplication.client.TodayAttendanceData
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.tasks.await
+import android.Manifest
+import android.location.Location
+import com.google.gson.Gson // <--- ADD THIS IMPORT to manually parse JsonElement
+import com.google.gson.JsonSyntaxException // <--- ADD THIS IMPORT for error handling
 
 
 class DashboardViewModelJP(application: Application) : AndroidViewModel(application) {
@@ -50,19 +59,28 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
 
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
 
+    private val fusedLocationClient: FusedLocationProviderClient =
+        LocationServices.getFusedLocationProviderClient(application)
+
     private val _projectCount = MutableStateFlow(0)
     val projectCount = _projectCount.asStateFlow()
 
     private val _todayAttendance = MutableStateFlow<TodayAttendanceData?>(null)
     val todayAttendance: StateFlow<TodayAttendanceData?> = _todayAttendance.asStateFlow()
 
+
+
     private var timerJob: Job? = null
+
+
 
 
     init {
         loadUserName()
-        fetchProjectCount()
-        fetchTaskCount()
+        viewModelScope.launch{
+            launch { fetchProjectCount() }
+            launch { fetchTaskCount() }
+        }
         fetchNotices()
     }
 
@@ -80,7 +98,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
 
     private fun loadUserName() {
         val savedName = sharedPreferences.getString("user_name", "") ?: ""
-        _userName.value = if (savedName.isNotBlank()) savedName else "User"
+        _userName.value = savedName.ifBlank { "User" }
     }
 
     fun toggleClockIn() {
@@ -111,37 +129,31 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
 
     fun dismissDialog() {
         _showDialog.value = false
-        // Important: If dialog is dismissed, the clock should remain running.
-        // No change to _isRunning.value here.
     }
 
     fun setSelectedOption(option: String) {
         _selectedOption.value = option
     }
 
-    fun updateStatus(assigned: Int, pending: Int) {
+    /*private fun updateStatus(assigned: Int, pending: Int) {
         _assignedProjects.value = assigned
         _pendingTasks.value = pending
-    }
+    }*/
 
     private fun startTimer() {
-        // Cancel any existing timer job to prevent multiple timers running
+        // Cancel existing timer to prevent multiple timers running
         timerJob?.cancel()
 
         timerJob = viewModelScope.launch {
-            // CollectLatest is good, but the while(running) loop inside it is more robust
-            // to ensure continuous operation as long as _isRunning.value is true.
-            // We'll use a direct check of _isRunning.value within the loop.
-            while (_isRunning.value) { // Continue as long as _isRunning is true
+            while (_isRunning.value) {
                 delay(1000L)
                 _elapsedTime.value += 1
             }
-            // Once _isRunning becomes false, the loop will exit, and the job will complete.
-            // This handles the stopping of the timer cleanly.
+
         }
     }
 
-    fun fetchProjectCount() {
+    private suspend fun fetchProjectCount() {
         val token = sharedPreferences.getString("auth_token", null) ?: return
 
         viewModelScope.launch {
@@ -150,10 +162,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 if (response.isSuccessful) {
                     val total = response.body()?.meta?.paging?.total ?: 0
                     _projectCount.value = total
-                    updateStatus(
-                        assigned = total,
-                        pending = 0
-                    ) // Optional: update assigned projects
+                    _assignedProjects.value = total
+
                 } else {
                     println("DEBUG: Error fetching projects - ${response.code()}")
                 }
@@ -163,7 +173,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    fun fetchTaskCount() {
+    private suspend fun fetchTaskCount() {
         val token = sharedPreferences.getString("auth_token", null) ?: return
 
         viewModelScope.launch {
@@ -172,7 +182,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 if (response.isSuccessful) {
                     val totalTasks = response.body()?.meta?.paging?.total ?: 0
                     _pendingTasks.value = totalTasks
-                    updateStatus(assigned = _projectCount.value, pending = totalTasks)
+
                 } else {
                     println("DEBUG: Error fetching tasks - ${response.code()}")
                 }
@@ -182,7 +192,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    fun fetchNotices() {
+    private fun fetchNotices() {
         val token = sharedPreferences.getString("auth_token", null) ?: return
 
         viewModelScope.launch {
@@ -220,30 +230,133 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    fun clockInToServer() {
-        val token = sharedPreferences.getString("auth_token", null) ?: return
-        val workingFrom = selectedOption.value
+    fun handleClockInButtonClick() {
+        //Check weather clocked in already
+        if (_isRunning.value) {
+            println("DEBUG: Already clocked in. Button press ignored.")
+            showToast("You are already clocked in.")
+            return
+        }
+
+        //Start Clock
+        _isRunning.value = true
+        _elapsedTime.value = 0L
+        startTimer()
+
+        //Get the Token and if null stop the clock
+        val token = sharedPreferences.getString("auth_token", null)
+        if (token == null) {
+            println("DEBUG: Auth token not found. Cannot clock in.")
+            revertClockInState()
+            return
+        }
+
+        val workingFrom = _selectedOption.value
 
         viewModelScope.launch {
+            var currentLatitude: Double? = null
+            var currentLongitude: Double? = null
+
+            // Check Location Permission
+            if (checkLocationPermission(getApplication())) {
+                try {
+                    // Get Location
+                    val location: Location? = fusedLocationClient.lastLocation.await()
+                    if (location != null) {
+                        currentLatitude = location.latitude
+                        currentLongitude = location.longitude
+                        println("Location- Lat=${currentLatitude}, Long=${currentLongitude}")
+                    } else {
+                        println("Cannot get location is null. Cannot clock in without precise location.")
+                        showToast("Failed to get your current location. Please ensure location services are enabled and try again.")
+                        revertClockInState()
+                        return@launch
+                    }
+                } catch (e: Exception) {
+                    // Location Not Found Error
+                    println("Error getting location")
+                    revertClockInState()
+                    return@launch
+                }
+            } else {
+                //Location Services is  Not Granted
+                println("DEBUG: Location permission not granted. Cannot get location for clock-in.")
+                revertClockInState()
+                return@launch
+            }
+
+            //Make the API CALL with location's lat and long
             try {
-                val response = apiService.clockIn("Bearer $token", ClockInRequest(workingFrom))
-                if (response.isSuccessful && response.body()?.success == true) {
-                    println("DEBUG: Clock-in successful - ${response.body()?.message}")
+                println("Clocking in with working_from: $workingFrom, Lat: $currentLatitude, Long: $currentLongitude")
 
-                    // Now fetch today's attendance
-                    fetchTodayAttendance()
+                val requestBody = ClockInRequest(workingFrom, currentLatitude, currentLongitude)
+                val response = apiService.clockIn("Bearer $token", requestBody)
 
+                if (response.isSuccessful) {
+                    val clockInResponse = response.body()
+                    if (clockInResponse != null) {
+                        if (clockInResponse.status == "success") {
+                            println("Clock-in successful on API. Message: ${clockInResponse.message}")
+                            showToast("Clock-in successful!")
+
+                            try {
+                                val attendanceData = if (clockInResponse.data != null && clockInResponse.data.isJsonObject) {
+                                    Gson().fromJson(clockInResponse.data, TodayAttendanceData::class.java)
+                                } else {
+                                    null
+                                }
+                                _todayAttendance.value = attendanceData
+                                println("Parsed attendance data: $attendanceData")
+                            } catch (e: JsonSyntaxException) {
+                                println("Warning: Could not parse 'data' on successful clock-in: ${e.localizedMessage}")
+                            }
+                        } else {
+                            val errorMessage = clockInResponse.message
+                            println("API Clock-in failed (logical error) - ${response.code()} Message: $errorMessage")
+                            revertClockInState()
+                        }
+                    } else {
+                        println("API Clock-in failed: Empty response body despite 200 OK.")
+                        revertClockInState()
+                    }
                 } else {
-                    println(
-                        "DEBUG: Clock-in failed - ${response.code()} ${
-                            response.errorBody()?.string()
-                        }"
-                    )
+                    val errorBody = response.errorBody()?.string()
+                    println("DEBUG: API Clock-in failed (HTTP error) - ${response.code()} Error: $errorBody")
+
+                    revertClockInState()
                 }
             } catch (e: Exception) {
-                println("DEBUG: Clock-in exception - ${e.localizedMessage}")
+                println("DEBUG: Clock-in API call exception - ${e.localizedMessage}")
+                e.printStackTrace()
+
+                revertClockInState()
             }
         }
+    }
+
+
+    private fun showToast(message: String) {
+
+        println("TOAST: $message")
+    }
+
+    // Helper function to check location permissions
+    private fun checkLocationPermission(context: Context): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    // Helper function to revert UI state
+    private fun revertClockInState() {
+        _isRunning.value = false
+        timerJob?.cancel()
+        _elapsedTime.value = 0L
     }
 
     fun confirmClockOut(reason: String) {

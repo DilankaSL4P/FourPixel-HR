@@ -10,12 +10,15 @@ import com.fourpixel.fourpixelhrapplication.client.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.fourpixel.fourpixelhrapplication.client.ApiService
 
 class ProjectsViewModel (application: Application) : AndroidViewModel(application) {
 
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
+
+    private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
 
     private val _allProjects = MutableStateFlow<List<Project>>(emptyList())
     val allProjects: StateFlow<List<Project>> = _allProjects
@@ -38,7 +41,7 @@ class ProjectsViewModel (application: Application) : AndroidViewModel(applicatio
             try {
                 val token = sharedPreferences.getString("auth_token", null) ?: return@launch
                 val bearerToken = "Bearer $token"
-                val response = RetrofitClient.api.getProjects(bearerToken)
+                val response = apiService.getProjects(bearerToken)
                 if (response.isSuccessful) {
                     _allProjects.value = response.body()?.data ?: emptyList()
                     updateFilteredProjects()

@@ -68,6 +68,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult // <--- ADD THIS IMPORT
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.wrapContentHeight
 
 
 @Composable
@@ -101,7 +105,30 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     var showNoticePopup by remember { mutableStateOf(false) }
 
     BackHandler {
-        // Do nothing when back button is pressed
+
+    }
+
+
+    //Function to request location permissions
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.entries.all { it.value }
+        if (granted) {
+            println("DEBUG: All location permissions granted.")
+        } else {
+            println("DEBUG: Location permissions denied. Clock-in features might be limited.")
+        }
+    }
+
+    //Calling the location request function when Dashboard Loads
+    LaunchedEffect(Unit) {
+        requestPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
     }
 
     ModalNavigationDrawer(
@@ -170,7 +197,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
             item { Spacer(modifier = Modifier.height(20.dp)) }
 
-            //New Notice Pop up
+            //Notice Pop up
             if (notices.isNotEmpty() && showNoticeBanner) {
                 item {
                     NoticeBanner(notice = notices.toString()) {
@@ -182,7 +209,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
             item { Spacer(modifier = Modifier.height(16.dp)) }
 
-            //TEXT
+            //Welcome Text
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -195,7 +222,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
             item { Spacer(modifier = Modifier.height(6.dp)) }
 
-            //Date Display Function
+            //Calling the Date Display Function
             item {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
@@ -207,6 +234,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
             item { Spacer(modifier = Modifier.height(30.dp)) }
 
+            //Clock
             item {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -282,8 +310,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                     // Clock-in Button
                     Button(
                         onClick = {
-                            viewModel.toggleClockIn() // Only starts the timer in ViewModel
-                            viewModel.clockInToServer() // Makes the API call
+                            viewModel.handleClockInButtonClick() // Makes the API call
                         },
                         enabled = isSelectionMade && !isRunning,
                         colors = ButtonDefaults.buttonColors(
@@ -327,16 +354,14 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
             if (showDialog) {
                 item {
                     ClockOutDialog(
-                        viewModel = viewModel, // Pass the ViewModel
+                        viewModel = viewModel,
                         onDismissRequest = {
-                            // When dialog is dismissed without confirmation,
-                            // we only hide the dialog, the timer keeps running.
+
                             viewModel.dismissDialog()
                         },
                         onConfirmation = {
-                            // This lambda is called when the dialog's internal Clock-out button is pressed.
-                            // This is where the timer stops and the API call is made.
-                            viewModel.confirmClockOut("Work completed") // Use the new confirmClockOut
+                            // Timer is stopped and the API call is made.
+                            viewModel.confirmClockOut("Work completed")
                         },
                         painter = painterResource(id = R.drawable.wrapup),
                         imageDescription = "Clock-out confirmation"
@@ -570,14 +595,14 @@ fun ClockOutDialog(
     painter: Painter,
     imageDescription: String,
 ) {
-    //var isRunning by remember { mutableStateOf(false) }
+
 
     Dialog(onDismissRequest = { onDismissRequest() }) {
-        // Draw a rectangle shape with rounded corners inside the dialog
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(600.dp)
+                .wrapContentHeight()
             ,
             shape = RoundedCornerShape(16.dp),
         ) {
@@ -588,7 +613,7 @@ fun ClockOutDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
             )
             {
-                //Close Button
+                //Close X Button
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -650,11 +675,11 @@ fun ClockOutDialog(
                 //Clock-Out Button
                 Button(
                     onClick = {
-                        // This is the actual confirmation:
+
                         onConfirmation() // This will call viewModel.confirmClockOut
                     },
                     colors = ButtonDefaults.buttonColors(
-                        // This button always has the same color for confirmation
+
                         containerColor =  Color(0xFFF9B232)
                     ),
                     shape = RoundedCornerShape(12.dp),

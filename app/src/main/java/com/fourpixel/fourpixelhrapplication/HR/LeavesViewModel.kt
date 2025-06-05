@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.fourpixel.fourpixelhrapplication.client.ApiService
 
 class LeavesViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -31,6 +32,8 @@ class LeavesViewModel(application: Application) : AndroidViewModel(application) 
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
+
+    private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
 
     private val _allLeaves = MutableStateFlow<List<Leave>>(emptyList())
     val allLeaves: StateFlow<List<Leave>> = _allLeaves
@@ -64,7 +67,7 @@ class LeavesViewModel(application: Application) : AndroidViewModel(application) 
                 }
 
                 val bearerToken = "Bearer $token"
-                val response = RetrofitClient.api.getLeaves(bearerToken)
+                val response = apiService.getLeaves(bearerToken)
 
                 if (response.isSuccessful) {
                     val leaves = response.body()?.data ?: emptyList()

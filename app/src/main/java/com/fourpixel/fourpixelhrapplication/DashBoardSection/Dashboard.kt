@@ -72,6 +72,8 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult // <--- ADD THIS IMPORT
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
 
 
 @Composable
@@ -104,6 +106,8 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     var showNoticeBanner by remember { mutableStateOf(true) }
     var showNoticePopup by remember { mutableStateOf(false) }
 
+    var displayText by remember { mutableStateOf("Work from") }
+
     BackHandler {
 
     }
@@ -130,6 +134,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
             )
         )
     }
+
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -438,44 +443,44 @@ fun StatusCard(title: String, subtitle: String, count: String, color: Color) {
     }
 }
 
-//Select Work Location Dropdown Menu
+//Work Mode Dropdown
 @Composable
 fun DropdownMenu(viewModel: DashboardViewModelJP, onSelectionMade: (Boolean) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    var displayText by remember { mutableStateOf("Select Work Mode") }
     val selectedOption by viewModel.selectedOption.collectAsState()
     val options = listOf("Office", "Work from Home")
 
     var dropdownWidth by remember { mutableIntStateOf(0) }
-    var isSelected by remember { mutableStateOf(false) }
+    val isSelected = selectedOption != "Work From"
 
     LaunchedEffect(selectedOption) {
-        // Update displayText whenever ViewModel's selectedOption changes
-        displayText = selectedOption
-        isSelected = selectedOption != "Office"
-        onSelectionMade(isSelected) // Inform parent about selection
+        onSelectionMade(isSelected)
     }
 
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
-        Box(
+
+        Button(
+            onClick = { expanded = true },
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF5F5F5), shape = RoundedCornerShape(12.dp))
-                .clickable { expanded = true }
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .height(48.dp)
                 .onGloballyPositioned { coordinates ->
                     dropdownWidth = coordinates.size.width
-                }
+                },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFF5F5F5),
+                contentColor = Color.Gray
+            ),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Row(
+            Row( // Content of the button
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
+                horizontalArrangement = Arrangement.Start, // Keep text left-aligned
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = displayText,
+                    text = selectedOption,
                     fontFamily = poppinsFontFamily,
-                    color = if (isSelected) Color.Black else Color.Gray,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f)
@@ -488,20 +493,35 @@ fun DropdownMenu(viewModel: DashboardViewModelJP, onSelectionMade: (Boolean) -> 
             }
         }
 
+        // The actual DropdownMenu remains largely the same
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.width(with(LocalDensity.current) { dropdownWidth.toDp() })
+            modifier = Modifier
+                .width(with(LocalDensity.current) { dropdownWidth.toDp() })
+
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option, fontFamily = poppinsFontFamily) },
+
+                    text = {
+                        Text(
+                            option,
+                            fontFamily = poppinsFontFamily,
+                            color = Color.DarkGray
+                        )
+                    },
                     onClick = {
                         viewModel.setSelectedOption(option)
-                        displayText = option
-                        isSelected = true
                         expanded = false
-                        onSelectionMade(true)
+                    },
+
+                    leadingIcon = {
+                        if (option == "Office") {
+                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray)
+                        } else {
+                            Icon(Icons.Default.Home, contentDescription = null, tint = Color.Gray)
+                        }
                     }
                 )
             }
@@ -586,6 +606,7 @@ fun getDayWithSuffix(day: Int): String {
         else -> "$day" + "th"
     }
 }
+
 
 @Composable
 fun ClockOutDialog(

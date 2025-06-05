@@ -111,8 +111,8 @@ data class NoticeResponse(
 
 // ClockIN
 data class ClockInRequest(
+    @SerializedName("work_from_type") val workFromType: String,
     @SerializedName("working_from") val workingFrom: String,
-    // Add these fields
     @SerializedName("currentLatitude") val currentLatitude: Double?, // Or String, depending on API. Double is typical.
     @SerializedName("currentLongitude") val currentLongitude: Double? // Or String, depending on API. Double is typical.
 )
@@ -143,6 +143,33 @@ data class TodayAttendanceData(
 data class GenericResponse(
     @SerializedName("message") val message: String,
     @SerializedName("data") val data: Any?
+)
+
+//Apply Leave
+data class LeaveItemUser(
+    @SerializedName("id") val id: Int?
+)
+
+data class LeaveItemType(
+    @SerializedName("id") val id: Int?
+)
+
+data class LeaveItem(
+    @SerializedName("leave_date") val leaveDate: String?,
+    @SerializedName("user") val user: LeaveItemUser?,
+    @SerializedName("type") val type: LeaveItemType?,
+    @SerializedName("reason") val reason: String?,
+    @SerializedName("duration") val duration: String,
+    @SerializedName("status") val status: String
+)
+
+data class AddLeaveRequest(
+    @SerializedName("item") val item: LeaveItem,
+    @SerializedName("users") val users: List<Any>,
+    @SerializedName("types") val types: List<Any>,
+    @SerializedName("status") val status: String,
+    @SerializedName("error") val error: JsonElement?,
+    @SerializedName("push") val push: JsonElement?
 )
 
 
@@ -186,6 +213,8 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body body: Map<String, String>
     ): Response<GenericResponse>
+
+
 
 
 }

@@ -36,7 +36,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _elapsedTime = MutableStateFlow(0L)
     val elapsedTime = _elapsedTime.asStateFlow()
 
-    private val _selectedOption = MutableStateFlow("Office")
+    private val _selectedOption = MutableStateFlow("Working From")
     val selectedOption = _selectedOption.asStateFlow()
 
     private val _showDialog = MutableStateFlow(false)
@@ -89,6 +89,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         saveUserName(name)
     }
 
+
     private fun saveUserName(name: String) {
         with(sharedPreferences.edit()) {
             putString("user_name", name)
@@ -102,13 +103,12 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     }
 
     fun toggleClockIn() {
-        // Only clock in if not already running
+
         if (!_isRunning.value) {
             _isRunning.value = true
-            _elapsedTime.value = 0L // Reset elapsed time when starting a new session
+            _elapsedTime.value = 0L
             startTimer()
-            // clockInToServer() is called directly from the UI onClick, not here.
-            // This method just handles the timer state.
+
         }
     }
 
@@ -288,8 +288,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             //Make the API CALL with location's lat and long
             try {
                 println("Clocking in with working_from: $workingFrom, Lat: $currentLatitude, Long: $currentLongitude")
-
-                val requestBody = ClockInRequest(workingFrom, currentLatitude, currentLongitude)
+                val workFromType = "office"
+                val requestBody = ClockInRequest(workFromType, workingFrom, currentLatitude, currentLongitude)
                 val response = apiService.clockIn("Bearer $token", requestBody)
 
                 if (response.isSuccessful) {

@@ -2,14 +2,15 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "example.com.fourpixelhrapplication"
+    namespace = "com.fourpixel.fourpixelhrapplication"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "example.com.fourpixelhrapplication"
+        applicationId = "com.fourpixel.fourpixelhrapplication"
         minSdk = 28
         targetSdk = 35
         versionCode = 1
@@ -37,6 +38,13 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/io.netty.versions.properties"
+        }
+    }
 }
 
 dependencies {
@@ -52,6 +60,8 @@ dependencies {
     implementation(libs.play.services.gcm)
     implementation(libs.play.services.tasks)
     implementation(libs.androidx.runner)
+    implementation(libs.firebase.appdistribution.gradle)
+    implementation(libs.firebase.messaging.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -95,4 +105,18 @@ dependencies {
     implementation ("androidx.core:core-ktx:1.9.0")
     implementation ("androidx.core:core:1.9.0")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation ("androidx.compose.runtime:runtime:1.5.0")
+    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.datastore:datastore-core:1.0.0")
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.0")
+    implementation ("com.google.accompanist:accompanist-navigation-animation:0.34.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
+    implementation("com.google.firebase:firebase-analytics")
+
+
 }

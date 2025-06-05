@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "498705071020",
+    "project_id": "hr-app-726e9",
+    "storage_bucket": "hr-app-726e9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:498705071020:android:fd8ce8adb6dc4354de9809",
+        "android_client_info": {
+          "package_name": "com.fourpixel.fourpixelhrapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1uVhruEPNkF3HdrD8R81nmiF5ZXKAy9I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

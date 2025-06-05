@@ -11,11 +11,14 @@ import com.fourpixel.fourpixelhrapplication.client.Task
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.fourpixel.fourpixelhrapplication.client.ApiService
 
 class TaskListViewModel(application: Application) : AndroidViewModel(application) {
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
+
+    private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
 
 
     private val _allTasks = MutableStateFlow<List<Task>>(emptyList())
@@ -39,7 +42,7 @@ class TaskListViewModel(application: Application) : AndroidViewModel(application
             try {
                 val token = sharedPreferences.getString("auth_token", null) ?: return@launch
                 val bearerToken = "Bearer $token"
-                val response = RetrofitClient.api.getMyTasks(bearerToken)
+                val response = apiService.getMyTasks(bearerToken)
                 if (response.isSuccessful) {
                     _allTasks.value = response.body()?.data ?: emptyList()
                     updateFilteredTasks()

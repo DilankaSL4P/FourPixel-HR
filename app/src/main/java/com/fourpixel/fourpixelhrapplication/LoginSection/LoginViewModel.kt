@@ -84,7 +84,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         _loading.value = true
         viewModelScope.launch {
             try {
-                println("DEBUG: Attempting login with Email: $currentEmail") // Removed password from logs
+                println("DEBUG: Attempting login with Email: $currentEmail")
 
                 val response = apiService.loginUser(LoginRequest(currentEmail, currentPassword))
                 println("DEBUG: Raw Response - ${response.raw()}")
@@ -141,7 +141,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private fun saveAuthToken(token: String) {
         with(sharedPreferences.edit()) {
             putString("auth_token", token)
-            apply()
+            commit()
         }
     }
 

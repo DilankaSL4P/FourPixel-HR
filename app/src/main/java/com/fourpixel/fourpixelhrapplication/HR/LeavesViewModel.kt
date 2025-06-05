@@ -11,15 +11,32 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import com.fourpixel.fourpixelhrapplication.client.ApiService
 
 class LeavesViewModel(application: Application) : AndroidViewModel(application) {
+
+    // Mapping to convert UI filter names to backend leaveTypeId values
+    private val leaveTypeMap = mapOf(
+        "All" to "All",
+        "Casual" to "1",
+        "Medical" to "2",
+        "Annual" to "3"
+    )
+
+    // Reversed Mapping for getting UI names from ID values
+    private val leaveTypeNameMap = mapOf(
+        "1" to "Casual",
+        "2" to "Medical",
+        "3" to "Annual"
+    )
 
     private val sharedPreferences: SharedPreferences =
         application.getSharedPreferences("AuthPrefs", Context.MODE_PRIVATE)
 
+    private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
+
     private val _allLeaves = MutableStateFlow<List<Leave>>(emptyList())
-    private val _filteredLeaves = MutableStateFlow<Map<String, List<Leave>>>(emptyMap())
-    val filteredLeaves: StateFlow<Map<String, List<Leave>>> = _filteredLeaves
+    val allLeaves: StateFlow<List<Leave>> = _allLeaves
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
@@ -50,12 +67,11 @@ class LeavesViewModel(application: Application) : AndroidViewModel(application) 
                 }
 
                 val bearerToken = "Bearer $token"
-                val response = RetrofitClient.api.getLeaves(bearerToken)
+                val response = apiService.getLeaves(bearerToken)
 
                 if (response.isSuccessful) {
                     val leaves = response.body()?.data ?: emptyList()
                     _allLeaves.value = leaves
-                    updateFilteredLeaves()
                 } else {
                     _errorMessage.value = "Failed to fetch leaves: ${response.message()}"
                 }
@@ -69,29 +85,48 @@ class LeavesViewModel(application: Application) : AndroidViewModel(application) 
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
-        updateFilteredLeaves()
     }
 
-    //Backend is not mapped. filters are not working. check HERE!!!!!!!!!
     fun updateFilter(filter: String) {
         _selectedFilter.value = filter
-        updateFilteredLeaves()
     }
 
-    private fun updateFilteredLeaves() {
-        val filtered = _allLeaves.value.filter { leave ->
-            val matchesFilter = _selectedFilter.value == "All" ||
-                    leave.leaveTypeId.toString() == _selectedFilter.value
-            val matchesSearch = leave.reason.contains(_searchQuery.value, ignoreCase = true)
+    // Filtered leaves by type and search query
+    val filteredLeaves: StateFlow<List<Leave>> = combine(
+        _searchQuery, _selectedFilter, _allLeaves
+    ) { query, filter, allLeaves ->
+        allLeaves.filter { leave ->
+            val filterTypeId = leaveTypeMap[filter] ?: "All"
+            val matchesFilter = filterTypeId == "All" || leave.leaveTypeId.toString() == filterTypeId
+            val matchesSearch = query.isBlank() || leave.reason.contains(query, ignoreCase = true)
             matchesFilter && matchesSearch
-        }.groupBy { it.leaveTypeId.toString() }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-        _filteredLeaves.value = filtered
-    }
+    // Group filtered leaves by Month-Year
+    val filteredLeavesByMonth: StateFlow<Map<String, List<Leave>>> = filteredLeaves
+        .map { leaves ->
+            val sdfInput = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val sdfOutput = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
 
-    fun getCount(type: String): Int {
-        return _filteredLeaves.value.values.flatten().count {
-            type == "All" || it.leaveTypeId.toString() == type
+            leaves
+                .sortedByDescending { it.leaveDate }
+                .groupBy { leave ->
+                    try {
+                        val date = sdfInput.parse(leave.leaveDate)
+                        date?.let { sdfOutput.format(it) } ?: "Unknown"
+                    } catch (e: Exception) {
+                        "Unknown"
+                    }
+                }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    // Get count of leaves for a specific filter type
+    fun getCount(filterType: String): Int {
+        val filterTypeId = leaveTypeMap[filterType] ?: "All"
+        return _allLeaves.value.count {
+            filterTypeId == "All" || it.leaveTypeId.toString() == filterTypeId
         }
     }
 
@@ -99,27 +134,8 @@ class LeavesViewModel(application: Application) : AndroidViewModel(application) 
         _errorMessage.value = null
     }
 
-    // ✅ NEW: Group filtered leaves by Month-Year
-    val filteredLeavesByMonth: StateFlow<Map<String, List<Leave>>> = combine(
-        _searchQuery, _selectedFilter, _allLeaves
-    ) { query, filter, allLeaves ->
-        val sdfInput = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val sdfOutput = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-
-        allLeaves
-            .filter {
-                val matchesFilter = filter == "All" || it.leaveTypeId.toString() == filter
-                val matchesSearch = query.isBlank() || it.reason.contains(query, ignoreCase = true)
-                matchesFilter && matchesSearch
-            }
-            .sortedByDescending { it.leaveDate }
-            .groupBy { leave ->
-                try {
-                    val date = sdfInput.parse(leave.leaveDate)
-                    date?.let { sdfOutput.format(it) } ?: "Unknown"
-                } catch (e: Exception) {
-                    "Unknown"
-                }
-            }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+    // Helper function to get leave type name from ID
+    fun getLeaveTypeName(leaveTypeId: Int): String {
+        return leaveTypeNameMap[leaveTypeId.toString()] ?: "Unknown"
+    }
 }

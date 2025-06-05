@@ -30,24 +30,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
+import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.fourpixel.fourpixelhrapplication.R
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 data class MenuItem(val label: String, val children: List<String> = emptyList())
 
 @Composable
-fun sideDrawer(navController: NavController, userName: String, userImageUrl: String, userRole: String) {
+fun SideDrawer(navController: NavController,
+               userName: String,
+               userImageUrl: String,
+               userRole: String ) {
 
     val menuItems = listOf(
         MenuItem("Dashboard"),
-        MenuItem("Work", listOf("Projects", "Tasks",)),
-        MenuItem("HR", listOf("Leaves", "Attendance","Holiday", "Appreciation")),
-        MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
-        MenuItem("NoticeBoard"),
-        MenuItem("About"),
+        MenuItem("Work", listOf("Projects", "Tasks")),
+        MenuItem("HR", listOf("Leaves")),
+        //MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
+        //MenuItem("NoticeBoard"),
+        //MenuItem("About"),
         MenuItem("Logout")
     )
 
@@ -70,7 +76,7 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
                     .background(Color.Black, shape = CircleShape)
                     .wrapContentSize(Alignment.Center)
             ) {
-                // Show first letter of name
+                // Showing the user Image
                 Image(
                     painter = rememberAsyncImagePainter(userImageUrl),
                     contentDescription = "Profile Image in Drawer",
@@ -119,11 +125,27 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
                         .fillMaxWidth()
                         .clickable {
                             when (item.label) {
+                                "Dashboard" -> {
+                                    val encodedUserName = java.net.URLEncoder.encode(userName, "UTF-8")
+                                    val encodedImageUrl = java.net.URLEncoder.encode(userImageUrl, "UTF-8")
+                                    val encodedUserRole = java.net.URLEncoder.encode(userRole, "UTF-8")
+
+                                    navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole")
+                                }
+
+
                                 "Work" -> expandedWork.value = !expandedWork.value
                                 "HR" -> expandedHR.value = !expandedHR.value
                                 "Finance" -> expandedFinance.value = !expandedFinance.value
 
                                 "NoticeBoard" -> navController.navigate("noticeboard")
+                                "Logout" -> {
+
+                                    navController.navigate("login") {
+                                        popUpTo(0) // clears the backstack
+                                    }
+                                }
+
                                 else -> Unit
                             }
                         }
@@ -139,7 +161,7 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
                     )
                     if (isExpandable) {
                         Icon(
-                            imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowDown else Icons.Outlined.KeyboardArrowRight,
+                            imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowDown else Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                             contentDescription = "Expand/Collapse",
                             tint = Color.Black
                         )
@@ -169,6 +191,22 @@ fun sideDrawer(navController: NavController, userName: String, userImageUrl: Str
                     }
                 }
             }
+        }
+        Spacer(modifier = Modifier.height(230.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Spacer(modifier = Modifier.width(24.dp))
+            Text(
+                text = "Powered By",
+                fontFamily = poppinsFontFamily,
+
+                fontSize = 14.sp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Image(
+                painter = painterResource(id = R.drawable.bsuite),
+                contentDescription = "BSuite Logo",
+                modifier = Modifier.size(60.dp)
+            )
         }
     }
 }

@@ -109,5 +109,9 @@ dependencies {
     implementation("androidx.datastore:datastore-core:1.0.0")
     implementation ("androidx.datastore:datastore-preferences:1.0.0")
     implementation("androidx.datastore:datastore-preferences:1.1.0")
+    implementation ("com.google.accompanist:accompanist-navigation-animation:0.34.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
 }

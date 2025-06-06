@@ -69,11 +69,17 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import android.Manifest
+import android.content.IntentSender
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult // <--- ADD THIS IMPORT
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
 
 
 @Composable
@@ -108,9 +114,75 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
 
     var displayText by remember { mutableStateOf("Work from") }
 
+    val context = LocalContext.current
+    val settingsClient = remember { LocationServices.getSettingsClient(context) }
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+
+
     BackHandler {
 
     }
+    //Forcing location permissions
+    val resolutionForResult = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { activityResult ->
+        if (activityResult.resultCode == android.app.Activity.RESULT_OK) {
+
+            viewModel.handleClockInButtonClick(settingsClient = settingsClient,
+                fusedLocationClient = fusedLocationClient,
+                context = context)
+        } else {
+            // User did not agree to make required location settings changes
+            Toast.makeText(context, "Location services not enabled. Cannot clock in.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    //Launcher for requesting runtime location permissions
+    val requestLocationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        when {
+            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
+
+                Toast.makeText(context, "Precise location granted.", Toast.LENGTH_SHORT).show()
+                viewModel.handleClockInButtonClick(settingsClient = settingsClient,
+                    fusedLocationClient = fusedLocationClient,
+                    context = context)
+            }
+            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                // Only approximate location access granted. Still sufficient for clock-in.
+                Toast.makeText(context, "Approximate location granted.", Toast.LENGTH_SHORT).show()
+                viewModel.handleClockInButtonClick(settingsClient = settingsClient,
+                    fusedLocationClient = fusedLocationClient,
+                    context = context)
+            }
+            else -> {
+                // No location access granted.
+                Toast.makeText(context, "Location permission denied. Cannot clock in.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+
+    LaunchedEffect(viewModel) {
+        viewModel.resolveLocationSettingsEvent.collect { resolvable ->
+            try {
+                resolutionForResult.launch(IntentSenderRequest.Builder(resolvable.resolution).build())
+            } catch (sendEx: IntentSender.SendIntentException) {
+
+                println("DEBUG: Error launching location settings resolution: ${sendEx.localizedMessage}")
+            }
+        }
+    }
+
+
+    LaunchedEffect(viewModel) {
+        viewModel.showToastEvent.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
 
     //Function to request location permissions
@@ -315,9 +387,26 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                     // Clock-in Button
                     Button(
                         onClick = {
-                            viewModel.handleClockInButtonClick() // Makes the API call
+                            // Check for permissions first
+                            val hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                            val hasCoarseLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                            if (hasFineLocation || hasCoarseLocation) {
+                                viewModel.handleClockInButtonClick(
+                                    settingsClient = settingsClient,
+                                    fusedLocationClient = fusedLocationClient,
+                                    context = context
+                                )
+                            } else {
+                                requestLocationPermissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            }
                         },
-                        enabled = isSelectionMade && !isRunning,
+                        enabled = isSelectionMade && !isRunning, // Ensure this logic is correct
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isRunning) Color.Gray else Color(0xFFFFC107)
                         ),

@@ -346,8 +346,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                                 id = -1, // You don't get an ID from this response, might need another fetch
                                 clockInTime = it.time,
                                 clockOutTime = null,
-                                workFromType = workFromType, // From request
-                                workingFrom = workingFrom, // From request
+                                workFromType = workFromType, // From re
+                                workingFrom = workingFrom, // From re
                                 currentLatitude = latitude?.toString(),
                                 currentLongitude = longitude?.toString()
                             )

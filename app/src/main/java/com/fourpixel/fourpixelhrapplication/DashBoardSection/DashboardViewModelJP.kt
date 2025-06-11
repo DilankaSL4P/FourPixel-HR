@@ -247,137 +247,13 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    /*fun handleClockInButtonClick() {
-        //Check weather clocked in already
-        if (_isRunning.value) {
-            println("DEBUG: Already clocked in. Button press ignored.")
-            showToast("You are already clocked in.")
-            return
-        }
 
-        val token = sharedPreferences.getString("auth_token", null)
-        if (token == null) {
-            println("DEBUG: Auth token not found. Cannot clock in.")
-            showToast("Authentication error. Please log in again.")
-            revertClockInState()
-            return
-        }
-
-
-        val workingFrom = _selectedOption.value
-
-        viewModelScope.launch {
-            var currentLatitude: Double? = null
-            var currentLongitude: Double? = null
-
-            // Check Location Permission
-            if (checkLocationPermission(getApplication())) {
-                try {
-                    // Get Location
-                    val location: Location? = fusedLocationClient.lastLocation.await()
-                    if (location != null) {
-                        currentLatitude = location.latitude
-                        currentLongitude = location.longitude
-                        println("Location- Lat=${currentLatitude}, Long=${currentLongitude}")
-                    } else {
-                        println("Cannot get location is null. Cannot clock in without precise location.")
-                        showToast("Failed to get your current location. Please ensure location services are enabled and try again.")
-                        revertClockInState()
-                        return@launch
-                    }
-                } catch (e: Exception) {
-                    // Location Not Found Error
-                    println("Error getting location")
-                    revertClockInState()
-                    return@launch
-                }
-            } else {
-                //Location Services is  Not Granted
-                println("DEBUG: Location permission not granted. Cannot get location for clock-in.")
-                revertClockInState()
-                return@launch
-            }
-
-            //Make the API CALL with location's lat and long
-            try {
-                println("Clocking in with working_from: $workingFrom, Lat: $currentLatitude, Long: $currentLongitude")
-                val workFromType = "office"
-                val requestBody = ClockInRequest(workFromType, workingFrom, currentLatitude, currentLongitude)
-                val response = apiService.clockIn("Bearer $token", requestBody)
-
-                if (response.isSuccessful) {
-                    val clockInResponse = response.body()
-                    if (clockInResponse != null) {
-                        if (clockInResponse.status == "success") {
-                            println("Clock-in successful on API. Message: ${clockInResponse.message}")
-                            showToast("Clock-in successful!")
-
-                            try {
-                                val attendanceData = if (clockInResponse.data != null && clockInResponse.data.isJsonObject) {
-                                    Gson().fromJson(clockInResponse.data, TodayAttendanceData::class.java)
-                                } else {
-                                    null
-                                }
-                                _todayAttendance.value = attendanceData
-                                println("Parsed attendance data: $attendanceData")
-                            } catch (e: JsonSyntaxException) {
-                                println("Warning: Could not parse 'data' on successful clock-in: ${e.localizedMessage}")
-                            }
-                        } else {
-                            val errorMessage = clockInResponse.message
-                            println("API Clock-in failed (logical error) - ${response.code()} Message: $errorMessage")
-                            revertClockInState()
-                        }
-                    } else {
-                        println("API Clock-in failed: Empty response body despite 200 OK.")
-                        revertClockInState()
-                    }
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    println("DEBUG: API Clock-in failed (HTTP error) - ${response.code()} Error: $errorBody")
-
-                    revertClockInState()
-                }
-            } catch (e: Exception) {
-                println("DEBUG: Clock-in API call exception - ${e.localizedMessage}")
-                e.printStackTrace()
-
-                revertClockInState()
-            }
-        }
-    }
-
-
-    private fun showToast(message: String) {
-
-        println("TOAST: $message")
-    }
-
-    // Helper function to check location permissions
-    private fun checkLocationPermission(context: Context): Boolean {
-        return ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    // Helper function to revert UI state
-    private fun revertClockInState() {
-        _isRunning.value = false
-        timerJob?.cancel()
-        _elapsedTime.value = 0L
-    }*/
 
     fun handleClockInButtonClick(settingsClient: SettingsClient,
                                  fusedLocationClient: FusedLocationProviderClient,
-                                 context: Context) {
+                                 context: Context)
+    {
         // Check whether clocked in already
-
-
         if (_isRunning.value) {
             println("DEBUG: Already clocked in. Button press ignored.")
             showToast("You are already clocked in.")
@@ -396,25 +272,22 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         if (!checkLocationPermission(getApplication())) {
             println("DEBUG: Location permission not granted. Requesting permission...")
             showToast("Location permission is required for clock-in. Please grant it.")
-            // The UI (Activity/Fragment) must handle the permission request.
-            // You might need an event here too if the ViewModel initiates the request.
-            // For now, assume the Activity/Fragment is responsible for initial permission checks.
             revertClockInState()
             return
         }
 
-        // Location permission granted, now proceed to get location
+       //Get location
         viewModelScope.launch {
             var currentLatitude: Double? = null
             var currentLongitude: Double? = null
 
             try {
 
-                // 1. Check if location settings are satisfied
-                val locationSettingsResponse = settingsClient.checkLocationSettings(locationSettingsRequest).await()
-                println("DEBUG: Location settings satisfied.")
 
-                // 2. Request current location
+                /*val locationSettingsResponse = settingsClient.checkLocationSettings(locationSettingsRequest).await()
+                println("DEBUG: Location settings satisfied.")*/
+
+                // Request current location
                 val location: Location? = fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).await()
 
                 if (location != null) {
@@ -438,7 +311,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                     _resolveLocationSettingsEvent.emit(e) // Emit event for UI to resolve
                     showToast("Please enable location services to clock in.")
                 } else {
-                    // Other errors (e.g., security exception if permission revoked in between, or network issue)
+                    // Other errors
                     println("Error getting location: ${e.localizedMessage}")
                     showToast("Failed to get your current location. Please ensure location services are enabled and try again.")
                 }
@@ -448,7 +321,6 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     }
 
     private suspend fun performClockInApiCall(token: String, latitude: Double?, longitude: Double?) {
-        // Start Clock *after* location is obtained and valid
         _isRunning.value = true
         _elapsedTime.value = 0L
         startTimer()
@@ -456,33 +328,39 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         val workingFrom = _selectedOption.value
         try {
             println("Clocking in with working_from: $workingFrom, Lat: $latitude, Long: $longitude")
-            val workFromType = "office" // Assuming a fixed type for now as per your request
+            val workFromType = "office"
             val requestBody = ClockInRequest(workFromType, workingFrom, latitude, longitude)
             val response = apiService.clockIn("Bearer $token", requestBody)
 
             if (response.isSuccessful) {
                 val clockInResponse = response.body()
                 if (clockInResponse != null) {
-                    if (clockInResponse.status == "success") {
+                    if (clockInResponse.message == "Clocked in successfully") {
                         println("Clock-in successful on API. Message: ${clockInResponse.message}")
-                        showToast("Clock-in successful!")
                         fetchTodayAttendance()
 
-                        try {
-                            val attendanceData = if (clockInResponse.data != null && clockInResponse.data.isJsonObject) {
-                                Gson().fromJson(clockInResponse.data, TodayAttendanceData::class.java)
-                            } else {
-                                null
-                            }
-                            _todayAttendance.value = attendanceData
-                            println("Parsed attendance data: $attendanceData")
-                        } catch (e: JsonSyntaxException) {
-                            println("Warning: Could not parse 'data' on successful clock-in: ${e.localizedMessage}")
-                        }
-                    } else {
-                        val errorMessage = clockInResponse.message
-                        println("API Clock-in failed (logical error) - ${response.code()} Message: $errorMessage")
+                        // Now, clockInResponse.data is ClockInSuccessData?
+                        val attendanceData = clockInResponse.data?.let {
 
+                            TodayAttendanceData(
+                                id = -1, // You don't get an ID from this response, might need another fetch
+                                clockInTime = it.time,
+                                clockOutTime = null,
+                                workFromType = workFromType, // From request
+                                workingFrom = workingFrom, // From request
+                                currentLatitude = latitude?.toString(),
+                                currentLongitude = longitude?.toString()
+                            )
+                        }
+
+                        _todayAttendance.value = attendanceData
+                        println("Parsed attendance data: $attendanceData")
+
+                    } else {
+                        // This covers cases where response.isSuccessful is true, but the message isn't the expected success message.
+                        val errorMessage = clockInResponse.message
+                        println("API Clock-in succeeded with unexpected message - ${response.code()} Message: $errorMessage")
+                        showToast("Clock-in response: $errorMessage") // Inform user about unexpected message
                         revertClockInState()
                     }
                 } else {
@@ -493,27 +371,23 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             } else {
                 val errorBody = response.errorBody()?.string()
                 println("DEBUG: API Clock-in failed (HTTP error) - ${response.code()} Error: $errorBody")
-
+                showToast("Clock-in failed: Server error ${response.code()}. Details: ${errorBody ?: "No details"}")
                 revertClockInState()
             }
         } catch (e: Exception) {
             println("DEBUG: Clock-in API call exception - ${e.localizedMessage}")
             e.printStackTrace()
-            showToast("Clock-in failed due to a network error.")
+            showToast("Clock-in failed due to a network error. Please check your internet connection.")
             revertClockInState()
         }
     }
 
     private fun showToast(message: String) {
-        // In a real app, you would use Toast.makeText(getApplication(), message, Toast.LENGTH_SHORT).show()
-        // But since ViewModel shouldn't directly touch UI, we're printing it for now.
         println("TOAST: $message")
     }
 
     // Helper function to check location permissions
     private fun checkLocationPermission(context: Context): Boolean {
-        // This only checks if permissions are GRANTED.
-        // The UI (Activity/Fragment) is responsible for REQUESTING them if not granted.
         return ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.ACCESS_FINE_LOCATION
@@ -541,18 +415,15 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 val requestBody = mapOf("reason" to reason)
                 val response = apiService.clockOut("Bearer $token", requestBody)
 
-                // --- START OF MODIFICATION ---
-                // Always reset UI state for timer upon confirmation, regardless of API success.
-                // This makes the UI responsive.
-                _isRunning.value = false // Stop the timer
-                timerJob?.cancel()       // Cancel the coroutine job
-                _elapsedTime.value = 0L  // Reset elapsed time to 0
-                _showDialog.value = false // Dismiss the dialog
-                // --- END OF MODIFICATION ---
+                _isRunning.value = false
+                timerJob?.cancel()
+                _elapsedTime.value = 0L
+                _showDialog.value = false
+
 
                 if (response.isSuccessful && response.body() != null) {
                     println("DEBUG: Clock-out successful - ${response.body()?.message}")
-                    fetchTodayAttendance() // Fetch updated attendance if successful
+                    fetchTodayAttendance()
                 } else {
                     println(
                         "DEBUG: Clock-out failed - ${response.code()} ${

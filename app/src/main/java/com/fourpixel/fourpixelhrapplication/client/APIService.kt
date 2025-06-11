@@ -118,10 +118,13 @@ data class ClockInRequest(
 )
 
 data class ClockInResponse(
-    @SerializedName("status") val status: String,
     @SerializedName("message") val message: String,
-    @SerializedName("data") val data: JsonElement?
+    @SerializedName("data") val data: ClockInSuccessData?
+)
 
+
+data class ClockInSuccessData(
+    @SerializedName("time") val time: String
 )
 
 //Clock out classes

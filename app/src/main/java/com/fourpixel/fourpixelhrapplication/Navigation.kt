@@ -20,6 +20,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.navigation.NavGraphBuilder
+import com.fourpixel.fourpixelhrapplication.HR.MonthlyAttendanceScreen
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
@@ -108,15 +109,22 @@ fun AppNavigation() {
             )
         ) { backStackEntry ->
             val taskId = backStackEntry.arguments?.getInt("taskId") ?: 0
+            val name = backStackEntry.arguments?.getString("name") ?: ""
+            val imageUrl = backStackEntry.arguments?.getString("imageUrl")
             val heading = backStackEntry.arguments?.getString("heading") ?: ""
+            val startDate = backStackEntry.arguments?.getString("startDate") ?: ""
             val status = backStackEntry.arguments?.getString("status") ?: ""
             val dueDate = backStackEntry.arguments?.getString("dueDate") ?: ""
+            val description = backStackEntry.arguments?.getString("description") ?: ""
             val assignedUser = backStackEntry.arguments?.getString("assignedUser") ?: ""
-            TaskDetailScreen(taskId, heading, status, dueDate, assignedUser, navController)
+            TaskDetailScreen(taskId,name, imageUrl, startDate,heading, status, dueDate, assignedUser,description, navController)
         }
 
         composable("addTask") {
             AddNewTaskScreen(navController)
+        }
+        composable("attendance") {
+            MonthlyAttendanceScreen(navController = navController)
         }
     }
 }

@@ -50,7 +50,7 @@ fun SideDrawer(navController: NavController,
     val menuItems = listOf(
         MenuItem("Dashboard"),
         MenuItem("Work", listOf("Projects", "Tasks")),
-        MenuItem("HR", listOf("Leaves")),
+        MenuItem("HR", listOf("Leaves", "Attendance")),
         //MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
         //MenuItem("NoticeBoard"),
         //MenuItem("About"),
@@ -184,6 +184,7 @@ fun SideDrawer(navController: NavController,
                                         "Tasks" -> navController.navigate("tasks")
                                         "Projects" -> navController.navigate("projects")
                                         "Leaves" -> navController.navigate("leaves")
+                                        "Attendance" -> navController.navigate("attendance")
 
                                     }
                                 }

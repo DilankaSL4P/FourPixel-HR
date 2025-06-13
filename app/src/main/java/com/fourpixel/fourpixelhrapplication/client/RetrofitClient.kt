@@ -12,11 +12,11 @@ object RetrofitClient {
 
     val instance: Retrofit by lazy {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY // This logs headers and body
+            level = HttpLoggingInterceptor.Level.BODY
         }
 
         val okHttpClient = OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor) // <--- ADD THIS LINE
+            .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -24,7 +24,7 @@ object RetrofitClient {
 
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(okHttpClient) // <--- ENSURE THIS IS USING YOUR okHttpClient
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

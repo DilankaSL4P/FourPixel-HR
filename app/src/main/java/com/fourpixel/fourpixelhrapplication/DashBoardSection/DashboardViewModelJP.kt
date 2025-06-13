@@ -230,7 +230,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    private fun fetchTodayAttendance() {
+    fun fetchTodayAttendance() {
         viewModelScope.launch {
             try {
                 val token = sharedPreferences.getString("auth_token", null) ?: return@launch
@@ -408,40 +408,52 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
 
 
     fun confirmClockOut(reason: String) {
-        val token = sharedPreferences.getString("auth_token", null) ?: return
+        val token = sharedPreferences.getString("auth_token", null)
+        if (token == null) {
+            println("DEBUG: Auth token not found for clock-out. Cannot proceed.")
+            showToast("Authentication error. Please log in again.")
+            _showDialog.value = false // Always dismiss dialog
+            return
+        }
+        println("DEBUG: Clock-out initiated. Using token: Bearer $token")
 
         viewModelScope.launch {
             try {
                 val requestBody = mapOf("reason" to reason)
+                println("DEBUG: Sending clock-out request body: $requestBody")
+
                 val response = apiService.clockOut("Bearer $token", requestBody)
 
-                _isRunning.value = false
-                timerJob?.cancel()
-                _elapsedTime.value = 0L
-                _showDialog.value = false
+                if (response.isSuccessful) {
+                    // Assuming your clockOut API returns a GenericResponse or similar with a message
+                    val successMessage = response.body()?.message ?: "Clocked out successfully from server."
+                    println("DEBUG: Clock-out successful from server: $successMessage")
+                    showToast(successMessage)
 
+                    // *********** ONLY UPDATE UI STATE IF SERVER CALL WAS SUCCESSFUL ***********
+                    _isRunning.value = false
+                    timerJob?.cancel()
+                    _elapsedTime.value = 0L
+                    // *************************************************************************
 
-                if (response.isSuccessful && response.body() != null) {
-                    println("DEBUG: Clock-out successful - ${response.body()?.message}")
-                    fetchTodayAttendance()
                 } else {
-                    println(
-                        "DEBUG: Clock-out failed - ${response.code()} ${
-                            response.errorBody()?.string()
-                        }"
-                    )
-                    // TODO: You might want to show a Toast or Snackbar to the user
-                    // indicating that clock-out on the server failed.
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = "Clock-out failed: Server error ${response.code()}. Details: ${errorBody ?: "No specific error message"}"
+                    println("DEBUG: $errorMessage")
+                    showToast(errorMessage)
+                    // If clock-out failed on server, _isRunning remains true,
+                    // and the timer will continue to run (or if stopped, will be re-started by fetchTodayAttendance)
                 }
             } catch (e: Exception) {
-                println("DEBUG: Clock-out exception - ${e.localizedMessage}")
-                // Ensure UI state is reset even if there's a network/other exception
-                _isRunning.value = false
-                timerJob?.cancel()
-                _elapsedTime.value = 0L
-                _showDialog.value = false
-                // TODO: You might want to show a Toast or Snackbar to the user
-                // indicating a network error.
+                println("DEBUG: Clock-out API call exception - ${e.localizedMessage}")
+                e.printStackTrace()
+                showToast("Clock-out failed due to a network error. Please check your internet connection and try again.")
+                // If an exception occurs, _isRunning remains true, user can retry
+            } finally {
+                // No matter the outcome, always fetch the latest attendance from the server
+                // to ensure UI is in sync with the backend.
+                fetchTodayAttendance()
+                _showDialog.value = false // Always dismiss dialog
             }
         }
     }

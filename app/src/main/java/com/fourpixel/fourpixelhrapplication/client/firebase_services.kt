@@ -17,9 +17,6 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     // Called when a new FCM registration token is generated
     override fun onNewToken(token: String) {
         Log.d(TAG, "Refreshed token: $token")
-        // Send this token to your app server.
-        // This token uniquely identifies your app instance on this device.
-        // You'll need this token on your backend to send targeted messages.
         sendRegistrationToServer(token)
     }
 
@@ -27,7 +24,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         Log.d(TAG, "From: ${remoteMessage.from}")
 
-        // Check if message contains a data payload.
+
         if (remoteMessage.data.isNotEmpty()) {
             Log.d(TAG, "Message data payload: ${remoteMessage.data}")
 

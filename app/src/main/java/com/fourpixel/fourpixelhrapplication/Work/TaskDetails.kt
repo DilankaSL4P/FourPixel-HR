@@ -1,14 +1,13 @@
 package com.fourpixel.fourpixelhrapplication.Work
 
-import android.content.res.Configuration
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Note
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,13 +18,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 @Composable
 fun TaskDetailScreen(taskId: Int,
+                     name: String,
+                     imageUrl: String?,
                      heading: String,
+                     startDate: String,
                      status: String,
                      dueDate: String,
+                     description: String,
                      assignedUser: String, navController: NavController,) {
 
     val displayStatus = when (status.lowercase()) {
@@ -108,7 +112,7 @@ fun TaskDetailScreen(taskId: Int,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that",
+                text = description,
                 fontSize = 14.sp,
                 color = Color.DarkGray,
                 fontFamily = poppinsFontFamily
@@ -124,7 +128,7 @@ fun TaskDetailScreen(taskId: Int,
                         fontFamily = poppinsFontFamily
                     )
                     Text(
-                        text = "20th Oct 2024",
+                        text = startDate,
                         fontSize = 14.sp,
                         fontFamily = poppinsFontFamily,
                         color = Color.Gray
@@ -133,12 +137,12 @@ fun TaskDetailScreen(taskId: Int,
                 Spacer(modifier = Modifier.width(32.dp))
                 Column {
                     Text(
-                        text = dueDate,
+                        text = "Due Date",
                         fontWeight = FontWeight.Bold,
                         fontFamily = poppinsFontFamily
                     )
                     Text(
-                        text = "10th Nov 2024",
+                        text = dueDate,
                         fontSize = 14.sp,
                         fontFamily = poppinsFontFamily,
                         color = Color.Gray
@@ -161,12 +165,24 @@ fun TaskDetailScreen(taskId: Int,
                         .background(Color.Black, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "S",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = poppinsFontFamily
-                    )
+
+                    if (!imageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = "Assigned user profile image",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Transparent, CircleShape),
+                        )
+                    } else {
+                        val firstLetter = assignedUser.firstOrNull()?.uppercaseChar()?.toString() ?: ""
+                        Text(
+                            text = firstLetter,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = poppinsFontFamily
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -188,9 +204,9 @@ fun TaskDetailScreen(taskId: Int,
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BottomBarItem(icon = Icons.Default.List, label = "Sub Task", selected = true)
+            BottomBarItem(icon = Icons.AutoMirrored.Filled.List, label = "Sub Task", selected = true)
             BottomBarItem(icon = Icons.Default.ChatBubbleOutline, label = "Comment")
-            BottomBarItem(icon = Icons.Default.Note, label = "Notes")
+            BottomBarItem(icon = Icons.AutoMirrored.Filled.Note, label = "Notes")
             BottomBarItem(icon = Icons.Default.AccessTime, label = "Timesheet")
             BottomBarItem(icon = Icons.Default.UploadFile, label = "Files")
         }
@@ -214,5 +230,3 @@ fun BottomBarItem(icon: ImageVector, label: String, selected: Boolean = false) {
         )
     }
 }
-
-

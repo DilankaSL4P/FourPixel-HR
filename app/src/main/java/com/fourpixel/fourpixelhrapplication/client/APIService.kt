@@ -64,14 +64,26 @@ data class ProjectResponse(
     @SerializedName("meta") val meta: Meta
 )
 
-//Task Data
 data class Task(
     @SerializedName("id") val id: Int,
     @SerializedName("heading") val heading: String,
+    @SerializedName("start_date") val startDate: String?,
+    @SerializedName("due_date") val dueDate: String?,
+    @SerializedName("description") val description: String?,
+    @SerializedName("status") val status: String,
+    @SerializedName("project") val project: Project?,
+    @SerializedName("users") val users: List<User>?,
+    @SerializedName("subtasks") val subtasks: List<Subtask>?
+)
+
+
+data class Subtask(
+    @SerializedName("id") val id: Int,
+    @SerializedName("title") val title: String,
+    @SerializedName("start_date") val startDate: String?,
     @SerializedName("due_date") val dueDate: String?,
     @SerializedName("status") val status: String,
-    @SerializedName("assignedUser") val assignedUser: String
-
+    @SerializedName("assigned_to") val assignedTo: Any?
 )
 
 data class TaskResponse(
@@ -113,15 +125,18 @@ data class NoticeResponse(
 data class ClockInRequest(
     @SerializedName("work_from_type") val workFromType: String,
     @SerializedName("working_from") val workingFrom: String,
-    @SerializedName("currentLatitude") val currentLatitude: Double?, // Or String, depending on API. Double is typical.
-    @SerializedName("currentLongitude") val currentLongitude: Double? // Or String, depending on API. Double is typical.
+    @SerializedName("currentLatitude") val currentLatitude: Double?,
+    @SerializedName("currentLongitude") val currentLongitude: Double?
 )
 
 data class ClockInResponse(
-    @SerializedName("status") val status: String,
     @SerializedName("message") val message: String,
-    @SerializedName("data") val data: JsonElement?
+    @SerializedName("data") val data: ClockInSuccessData?
+)
 
+
+data class ClockInSuccessData(
+    @SerializedName("time") val time: String
 )
 
 //Clock out classes

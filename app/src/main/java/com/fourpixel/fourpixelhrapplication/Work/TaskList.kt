@@ -93,7 +93,9 @@ fun TaskListScreen(navController: NavController, viewModel: TaskListViewModel = 
             filteredTasks.forEach { task ->
                 TaskCard(task = task) {
                     navController.navigate(
-                        "taskDetail/${task.id}/${Uri.encode(task.heading)}/${task.status}/${Uri.encode(task.dueDate ?: "N/A")}/${Uri.encode(task.assignedUser ?: "N/A")}"
+                        "taskDetail/${task.id}/${Uri.encode(task.heading)}/${task.status}/${Uri.encode(task.dueDate ?: "N/A")}/${Uri.encode(
+                            (task.users ?: "N/A").toString()
+                        )}"
                     )
                 }
             }

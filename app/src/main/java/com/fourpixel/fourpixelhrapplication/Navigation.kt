@@ -86,8 +86,14 @@ fun AppNavigation() {
             TaskListScreen(navController)
         }
 
-        composable("projects") {
-            ProjectListScreen(navController)
+        composable(
+            "projects/{userName}",
+            arguments = listOf(
+                navArgument("userName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val userName = backStackEntry.arguments?.getString("userName") ?: "User"
+            ProjectListScreen(navController = navController, userNameFromNav = userName)
         }
 
         composable("applyLeave") {

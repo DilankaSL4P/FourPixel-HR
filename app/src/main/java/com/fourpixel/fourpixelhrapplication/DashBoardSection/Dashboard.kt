@@ -100,7 +100,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     //val formattedDate = dateFormat.format(currentDate)
 
     val showDialog by viewModel.showDialog.collectAsState()
-    var isSelectionMade by remember { mutableStateOf(false) }
+    //var isSelectionMade by remember { mutableStateOf(false) }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -117,6 +117,8 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     val context = LocalContext.current
     val settingsClient = remember { LocationServices.getSettingsClient(context) }
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    val selectedOption by viewModel.selectedOption.collectAsState()
 
 
 
@@ -372,9 +374,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
             item { Spacer(modifier = Modifier.height(30.dp)) }
 
             item {
-                DropdownMenu(viewModel) { selected ->
-                    isSelectionMade = selected
-                }
+                DropdownMenu(viewModel)
             }
 
             item { Spacer(modifier = Modifier.height(10.dp)) }
@@ -406,7 +406,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                                 )
                             }
                         },
-                        enabled = isSelectionMade && !isRunning, // Ensure this logic is correct
+                        enabled = !isRunning && (selectedOption != "Working From"),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isRunning) Color.Gray else Color(0xFFFFC107)
                         ),
@@ -455,7 +455,7 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
                         },
                         onConfirmation = {
                             // Timer is stopped and the API call is made.
-                            viewModel.confirmClockOut("Work completed")
+                            viewModel.confirmClockOut()
                         },
                         painter = painterResource(id = R.drawable.wrapup),
                         imageDescription = "Clock-out confirmation"
@@ -534,17 +534,14 @@ fun StatusCard(title: String, subtitle: String, count: String, color: Color) {
 
 //Work Mode Dropdown
 @Composable
-fun DropdownMenu(viewModel: DashboardViewModelJP, onSelectionMade: (Boolean) -> Unit) {
+fun DropdownMenu(viewModel: DashboardViewModelJP) {
     var expanded by remember { mutableStateOf(false) }
     val selectedOption by viewModel.selectedOption.collectAsState()
     val options = listOf("Office", "Work from Home")
 
     var dropdownWidth by remember { mutableIntStateOf(0) }
-    val isSelected = selectedOption != "Work From"
+    //val isSelected = selectedOption != "Work From"
 
-    LaunchedEffect(selectedOption) {
-        onSelectionMade(isSelected)
-    }
 
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
 
@@ -712,7 +709,7 @@ fun ClockOutDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
+                .height(550.dp)
             ,
             shape = RoundedCornerShape(16.dp),
         ) {

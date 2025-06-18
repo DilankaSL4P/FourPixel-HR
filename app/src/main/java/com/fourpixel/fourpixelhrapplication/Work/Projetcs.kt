@@ -1,15 +1,11 @@
 package com.fourpixel.fourpixelhrapplication.Work
 
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,11 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.fourpixel.fourpixelhrapplication.client.Project
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import androidx.compose.foundation.lazy.LazyRow
@@ -33,10 +27,14 @@ import androidx.compose.foundation.lazy.items
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectListScreen(navController: NavController, viewModel: ProjectsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+fun ProjectListScreen(navController: NavController,
+                      userNameFromNav: String,
+                      viewModel: ProjectsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val filteredProjects by viewModel.filteredProjects.collectAsState()
+
+    val userInitial = userNameFromNav.firstOrNull()?.uppercaseChar()?.toString() ?: "U"
 
     Column(
         modifier = Modifier
@@ -82,14 +80,14 @@ fun ProjectListScreen(navController: NavController, viewModel: ProjectsViewModel
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             filteredProjects.forEach { project ->
-                ProjectCard(project)
+                ProjectCard(project, userInitial)
             }
         }
     }
 }
 
 @Composable
-fun ProjectCard(project: Project) {
+fun ProjectCard(project: Project, userInitial: String) {
 
     val displayStatus = when (project.status.lowercase()) {
         "in progress" -> "Ongoing"
@@ -171,7 +169,7 @@ fun ProjectCard(project: Project) {
                     fontFamily = poppinsFontFamily
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                CircleInitial("S")
+                CircleInitial(userInitial)
             }
 
 

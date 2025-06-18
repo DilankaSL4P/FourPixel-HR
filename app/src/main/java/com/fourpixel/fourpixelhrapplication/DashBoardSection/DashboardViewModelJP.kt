@@ -21,6 +21,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.tasks.await
 import android.Manifest
 import android.location.Location
+import com.fourpixel.fourpixelhrapplication.client.TodayAttendanceRootData
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.gson.Gson
@@ -28,8 +29,7 @@ import com.google.gson.JsonSyntaxException
 import com.google.android.gms.location.Priority
 import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.common.api.ResolvableApiException
-
-
+import java.net.URLDecoder
 
 
 class DashboardViewModelJP(application: Application) : AndroidViewModel(application) {
@@ -72,8 +72,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _projectCount = MutableStateFlow(0)
     val projectCount = _projectCount.asStateFlow()
 
-    private val _todayAttendance = MutableStateFlow<TodayAttendanceData?>(null)
-    val todayAttendance: StateFlow<TodayAttendanceData?> = _todayAttendance.asStateFlow()
+    private val _todayAttendance = MutableStateFlow<TodayAttendanceRootData?>(null)
+    val todayAttendance: StateFlow<TodayAttendanceRootData?> = _todayAttendance.asStateFlow()
 
     //Location setting up
     private val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 0)
@@ -104,8 +104,10 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     }
 
     fun setUserName(name: String) {
-        _userName.value = name
-        saveUserName(name)
+        val decodedName = URLDecoder.decode(name, "UTF-8")
+        val firstName = decodedName.split(" ")[0]
+        _userName.value = firstName
+        saveUserName(firstName)
     }
 
     private fun saveUserName(name: String) {
@@ -325,7 +327,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         _elapsedTime.value = 0L
         startTimer()
 
-        val workingFrom = _selectedOption.value
+        val workingFrom = "Office"
         try {
             println("Clocking in with working_from: $workingFrom, Lat: $latitude, Long: $longitude")
             val workFromType = "office"
@@ -337,30 +339,14 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 if (clockInResponse != null) {
                     if (clockInResponse.message == "Clocked in successfully") {
                         println("Clock-in successful on API. Message: ${clockInResponse.message}")
-                        fetchTodayAttendance()
-
-                        // Now, clockInResponse.data is ClockInSuccessData?
-                        val attendanceData = clockInResponse.data?.let {
-
-                            TodayAttendanceData(
-                                id = -1, // You don't get an ID from this response, might need another fetch
-                                clockInTime = it.time,
-                                clockOutTime = null,
-                                workFromType = workFromType, // From re
-                                workingFrom = workingFrom, // From re
-                                currentLatitude = latitude?.toString(),
-                                currentLongitude = longitude?.toString()
-                            )
-                        }
-
-                        _todayAttendance.value = attendanceData
-                        println("Parsed attendance data: $attendanceData")
+                        // *** CRUCIAL: Rely on fetchTodayAttendance to get the actual attendance ID ***
+                        fetchTodayAttendance() // This call will correctly populate _todayAttendance.value
+                        showToast("Clocked in successfully!") // User-friendly toast
 
                     } else {
-                        // This covers cases where response.isSuccessful is true, but the message isn't the expected success message.
                         val errorMessage = clockInResponse.message
                         println("API Clock-in succeeded with unexpected message - ${response.code()} Message: $errorMessage")
-                        showToast("Clock-in response: $errorMessage") // Inform user about unexpected message
+                        showToast("Clock-in response: $errorMessage")
                         revertClockInState()
                     }
                 } else {
@@ -407,53 +393,65 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
 
 
 
-    fun confirmClockOut(reason: String) {
+    fun confirmClockOut() {
         val token = sharedPreferences.getString("auth_token", null)
         if (token == null) {
             println("DEBUG: Auth token not found for clock-out. Cannot proceed.")
             showToast("Authentication error. Please log in again.")
-            _showDialog.value = false // Always dismiss dialog
+            _showDialog.value = false
             return
         }
-        println("DEBUG: Clock-out initiated. Using token: Bearer $token")
+
+        val currentAttendanceRecord = _todayAttendance.value?.attendanceRecord
+
+
+        if (currentAttendanceRecord == null || currentAttendanceRecord.clockOutTime != null || currentAttendanceRecord.id <= 0) {
+            println("DEBUG: No valid active clock-in record found for clock-out. Aborting.")
+            showToast("You are not currently clocked in or your session has expired.")
+
+            fetchTodayAttendance()
+            _showDialog.value = false
+            // Revert UI if it somehow thought it was running but no record exists
+            _isRunning.value = false
+            timerJob?.cancel()
+            _elapsedTime.value = 0L
+            return
+        }
+
+        println("DEBUG: Clock-out using token: Bearer $token. Active attendance ID: ${currentAttendanceRecord.id}")
 
         viewModelScope.launch {
             try {
-                val requestBody = mapOf("reason" to reason)
-                println("DEBUG: Sending clock-out request body: $requestBody")
 
-                val response = apiService.clockOut("Bearer $token", requestBody)
+                println("DEBUG: Sending clock-out request.")
+                val response = apiService.clockOut("Bearer $token")
 
                 if (response.isSuccessful) {
-                    // Assuming your clockOut API returns a GenericResponse or similar with a message
                     val successMessage = response.body()?.message ?: "Clocked out successfully from server."
                     println("DEBUG: Clock-out successful from server: $successMessage")
                     showToast(successMessage)
 
-                    // *********** ONLY UPDATE UI STATE IF SERVER CALL WAS SUCCESSFUL ***********
+
                     _isRunning.value = false
                     timerJob?.cancel()
                     _elapsedTime.value = 0L
-                    // *************************************************************************
+                    _todayAttendance.value = null
 
                 } else {
                     val errorBody = response.errorBody()?.string()
                     val errorMessage = "Clock-out failed: Server error ${response.code()}. Details: ${errorBody ?: "No specific error message"}"
                     println("DEBUG: $errorMessage")
                     showToast(errorMessage)
-                    // If clock-out failed on server, _isRunning remains true,
-                    // and the timer will continue to run (or if stopped, will be re-started by fetchTodayAttendance)
+
                 }
             } catch (e: Exception) {
                 println("DEBUG: Clock-out API call exception - ${e.localizedMessage}")
                 e.printStackTrace()
                 showToast("Clock-out failed due to a network error. Please check your internet connection and try again.")
-                // If an exception occurs, _isRunning remains true, user can retry
+
             } finally {
-                // No matter the outcome, always fetch the latest attendance from the server
-                // to ensure UI is in sync with the backend.
                 fetchTodayAttendance()
-                _showDialog.value = false // Always dismiss dialog
+                _showDialog.value = false
             }
         }
     }

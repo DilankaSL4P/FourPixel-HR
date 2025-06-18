@@ -139,10 +139,9 @@ data class ClockInSuccessData(
     @SerializedName("time") val time: String
 )
 
-//Clock out classes
+//Attendance and Clock out classes
 data class TodayAttendanceResponse(
-    @SerializedName("message") val message: String,
-    @SerializedName("data") val data: TodayAttendanceData?
+    @SerializedName("data") val data: TodayAttendanceRootData?
 )
 
 data class TodayAttendanceData(
@@ -153,6 +152,79 @@ data class TodayAttendanceData(
     @SerializedName("working_from") val workingFrom: String?,
     @SerializedName("currentLatitude") val currentLatitude: String?,
     @SerializedName("currentLongitude") val currentLongitude: String?
+)
+
+data class TodayAttendanceRootData(
+    @SerializedName("attendance")
+    val attendanceRecord: AttendanceRecord?,
+
+    @SerializedName("office_hours_passed")
+    val officeHoursPassed: Boolean?,
+    val time: String?,
+    @SerializedName("ip_address")
+    val ipAddress: String?,
+    @SerializedName("remaining_clock_in")
+    val remainingClockIn: Int?
+)
+
+data class AttendanceRecord(
+    val id: Int,
+    @SerializedName("company_id")
+    val companyId: Int?,
+    @SerializedName("location_id")
+    val locationId: Int?,
+    @SerializedName("clock_in_time")
+    val clockInTime: String?,
+    @SerializedName("clock_out_time")
+    val clockOutTime: String?,
+    @SerializedName("auto_clock_out")
+    val autoClockOut: Int?,
+    @SerializedName("clock_in_ip")
+    val clockInIp: String?,
+    @SerializedName("clock_out_ip")
+    val clockOutIp: String?,
+    @SerializedName("working_from")
+    val workingFrom: String?,
+    val late: String?,
+    @SerializedName("half_day")
+    val halfDay: String?,
+    @SerializedName("half_day_type")
+    val halfDayType: String?,
+    @SerializedName("added_by")
+    val addedBy: Int?,
+    @SerializedName("last_updated_by")
+    val lastUpdatedBy: Int?,
+    val latitude: String?,
+    val longitude: String?,
+    @SerializedName("shift_start_time")
+    val shiftStartTime: String?,
+    @SerializedName("shift_end_time")
+    val shiftEndTime: String?,
+    @SerializedName("employee_shift_id")
+    val employeeShiftId: Int?,
+    @SerializedName("created_at")
+    val createdAt: String?,
+    @SerializedName("updated_at")
+    val updatedAt: String?,
+    @SerializedName("work_from_type")
+    val workFromType: String?,
+    @SerializedName("overwrite_attendance")
+    val overwriteAttendance: String?,
+    @SerializedName("clock_in_date")
+    val clockInDate: String?,
+    val company: CompanyDetails?
+)
+
+data class CompanyDetails(
+    val id: Int?,
+    @SerializedName("logo_url")
+    val logoUrl: String?,
+    @SerializedName("login_background_url")
+    val loginBackgroundUrl: String?,
+    @SerializedName("moment_date_format")
+    val momentDateFormat: String?,
+    @SerializedName("favicon_url")
+    val faviconUrl: String?
 )
 
 data class GenericResponse(
@@ -225,8 +297,7 @@ interface ApiService {
 
     @POST("api/v1/attendance/clock-out")
     suspend fun clockOut(
-        @Header("Authorization") token: String,
-        @Body body: Map<String, String>
+        @Header("Authorization") token: String
     ): Response<GenericResponse>
 
 

@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 import com.google.gson.JsonElement
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 //Login
@@ -144,6 +145,8 @@ data class ClockInSuccessData(
 //Attendance and Clock out classes
 data class ClockOutRequest(
     //@SerializedName("id") val attendanceId: Int,
+    //@SerializedName("work_from_type") val workFromType: String,
+    //@SerializedName("working_from") val workingFrom: String,
     @SerializedName("currentLatitude") val currentLatitude: Double?,
     @SerializedName("currentLongitude") val currentLongitude: Double?
 
@@ -293,7 +296,7 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<TaskResponse>
 
-    @GET("api/v1/notice-board")
+    @GET("/api/v1/notice")
     suspend fun getNotices(
         @Header("Authorization") token: String
     ): Response<NoticeResponse>
@@ -314,10 +317,10 @@ interface ApiService {
         @Header("Authorization") token: String,
     ): Response<TodayAttendanceResponse>
 
-    @POST("api/v1/attendance/clock-out")
+    @POST("api/v1/attendance/clock-out/{id}")
     suspend fun clockOut(
         @Header("Authorization") token: String,
-        @Query("id") attendanceId: Int,
+        @Path("id") attendanceId: Int,
         @Body body: ClockOutRequest
     ): Response<GenericResponse>
 

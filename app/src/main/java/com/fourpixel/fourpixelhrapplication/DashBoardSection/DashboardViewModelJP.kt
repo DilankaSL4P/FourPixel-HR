@@ -29,6 +29,7 @@ import com.google.gson.JsonSyntaxException
 import com.google.android.gms.location.Priority
 import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.common.api.ResolvableApiException
+import com.google.common.reflect.TypeToken
 import java.net.URLDecoder
 
 
@@ -97,11 +98,14 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     init {
         loadUserName()
         viewModelScope.launch{
-            launch { fetchProjectCount() }
-            launch { fetchTaskCount() }
+            fetchTodayAttendance()
+            fetchProjectCount()
+            fetchTaskCount()
+            fetchNotices()
         }
         fetchNotices()
     }
+
 
     fun setUserName(name: String) {
         val decodedName = URLDecoder.decode(name, "UTF-8")
@@ -366,9 +370,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 if (clockInResponse != null) {
                     if (clockInResponse.message == "Clocked in successfully") {
                         println("Clock-in successful on API. Message: ${clockInResponse.message}")
-                        // *** CRUCIAL: Rely on fetchTodayAttendance to get the actual attendance ID ***
-                        fetchTodayAttendance() // This call will correctly populate _todayAttendance.value
-                        showToast("Clocked in successfully!") // User-friendly toast
+                        fetchTodayAttendance()
+                        showToast("Clocked in successfully!")
 
                     } else {
                         val errorMessage = clockInResponse.message
@@ -418,19 +421,23 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         _elapsedTime.value = 0L
     }
 
-
+    data class ErrorResponse(val message: String?, val errors: Map<String, List<String>>?)
 
     fun confirmClockOut() {
+        // 1. Retrieve authentication token
         val token = sharedPreferences.getString("auth_token", null)
         if (token == null) {
             viewModelScope.launch { _showToastEvent.emit("Authentication error. Please log in again.") }
             _showDialog.value = false
             return
         }
+
+        // 2. Validate the current attendance record before proceeding
         val currentAttendanceRecord = _todayAttendance.value?.attendanceRecord
         if (currentAttendanceRecord == null || currentAttendanceRecord.id <= 0) {
             println("DEBUG: No valid active clock-in record found for clock-out. Aborting.")
             viewModelScope.launch { _showToastEvent.emit("You are not currently clocked in.") }
+            // Clean up the UI state
             fetchTodayAttendance()
             revertClockInState()
             _showDialog.value = false
@@ -438,50 +445,61 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
 
         viewModelScope.launch {
-
+            // 3. Get the user's current location
             val location = getCurrentLocation()
-
             if (location == null) {
+                // Error is likely already shown by getCurrentLocation(), so just close the dialog
                 _showDialog.value = false
                 return@launch
             }
 
-            val currentLat = location.latitude
-            val currentLng = location.longitude
-
+            // 4. Prepare the request body
             val clockOutRequestBody = ClockOutRequest(
-                currentLatitude = currentLat,
-                currentLongitude = currentLng
+                currentLatitude = location.latitude,
+                currentLongitude = location.longitude
             )
 
             val attendanceId = currentAttendanceRecord.id
-            println("DEBUG: Sending clock-out request for attendance ID: $attendanceId with location (Lat: $currentLat, Lng: $currentLng)")
+            println("DEBUG: Sending clock-out request for attendance ID: $attendanceId with location (Lat: ${location.latitude}, Lng: ${location.longitude})")
 
             try {
+                // 5. Make the API call - This call correctly matches your Retrofit interface
                 val response = apiService.clockOut(
-                    token = "Bearer $token",
-                    attendanceId = attendanceId,
-                    body = clockOutRequestBody
+                    token = "Bearer $token",      // Maps to @Header("Authorization")
+                    attendanceId = attendanceId,      // Maps to @Query("id")
+                    body = clockOutRequestBody  // Maps to @Body
                 )
 
+                // 6. Handle the response
                 if (response.isSuccessful) {
+                    // Handle success
                     val successMessage = response.body()?.message ?: "Clocked out successfully!"
                     println("DEBUG: Clock-out successful from server: $successMessage")
                     _showToastEvent.emit(successMessage)
+                    // Reset state after successful clock-out
                     revertClockInState()
                     _todayAttendance.value = null
                 } else {
+                    // Handle error
                     val errorBody = response.errorBody()?.string()
-                    val errorMessage = "Clock-out failed: ${errorBody ?: "Server error ${response.code()}"}"
+                    // A more robust way to parse the error message
+                    val errorMessage = try {
+                        val type = object : TypeToken<ErrorResponse>() {}.type
+                        val errorResponse: ErrorResponse? = Gson().fromJson(errorBody, type)
+                        errorResponse?.message ?: "Clock-out failed: Server error ${response.code()}"
+                    } catch (e: Exception) {
+                        "Clock-out failed: Invalid error format from server."
+                    }
                     println("DEBUG: $errorMessage")
                     _showToastEvent.emit(errorMessage)
                 }
             } catch (e: Exception) {
+                // Handle network or other exceptions
                 val errorMessage = "Clock-out failed due to a network error."
                 println("DEBUG: Clock-out API call exception - ${e.localizedMessage}")
                 _showToastEvent.emit(errorMessage)
             } finally {
-                // Always close the dialog
+                // 7. Ensure the dialog is always closed
                 _showDialog.value = false
             }
         }

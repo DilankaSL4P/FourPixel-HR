@@ -14,13 +14,13 @@ import com.fourpixel.fourpixelhrapplication.client.ApiService
 import com.fourpixel.fourpixelhrapplication.client.ClockInRequest
 import com.fourpixel.fourpixelhrapplication.client.Notice
 import com.fourpixel.fourpixelhrapplication.client.RetrofitClient
-import com.fourpixel.fourpixelhrapplication.client.TodayAttendanceData
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.tasks.await
 import android.Manifest
 import android.location.Location
+import com.fourpixel.fourpixelhrapplication.client.ClockOutRequest
 import com.fourpixel.fourpixelhrapplication.client.TodayAttendanceRootData
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationSettingsRequest
@@ -249,6 +249,33 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    private suspend fun getCurrentLocation(): Location? {
+        // 1. Check for permissions first
+        if (!checkLocationPermission(getApplication())) {
+            showToast("Location permission is required. Please grant it in settings.")
+            return null
+        }
+
+        // 2. Try to get the location
+        return try {
+            val location = fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).await()
+            if (location == null) {
+                showToast("Failed to get your current location. Please try again.")
+            }
+            location // Return the location object (or null if it failed)
+        } catch (e: Exception) {
+            // Handle cases where location services might be off
+            if (e is ResolvableApiException) {
+                _resolveLocationSettingsEvent.emit(e) // Emit event for UI to resolve
+                showToast("Please enable location services.")
+            } else {
+                showToast("Could not retrieve location: ${e.message}")
+                println("Error getting location: ${e.localizedMessage}")
+            }
+            null // Return null on any exception
+        }
+    }
+
 
 
     fun handleClockInButtonClick(settingsClient: SettingsClient,
@@ -396,61 +423,78 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     fun confirmClockOut() {
         val token = sharedPreferences.getString("auth_token", null)
         if (token == null) {
-            println("DEBUG: Auth token not found for clock-out. Cannot proceed.")
-            showToast("Authentication error. Please log in again.")
+            viewModelScope.launch { _showToastEvent.emit("Authentication error. Please log in again.") }
             _showDialog.value = false
             return
         }
 
         val currentAttendanceRecord = _todayAttendance.value?.attendanceRecord
 
-
-        if (currentAttendanceRecord == null || currentAttendanceRecord.clockOutTime != null || currentAttendanceRecord.id <= 0) {
+        if (currentAttendanceRecord == null || currentAttendanceRecord.id <= 0) {
             println("DEBUG: No valid active clock-in record found for clock-out. Aborting.")
-            showToast("You are not currently clocked in or your session has expired.")
-
+            viewModelScope.launch { _showToastEvent.emit("You are not currently clocked in.") }
             fetchTodayAttendance()
+            revertClockInState() // Use your existing helper
             _showDialog.value = false
-            // Revert UI if it somehow thought it was running but no record exists
-            _isRunning.value = false
-            timerJob?.cancel()
-            _elapsedTime.value = 0L
             return
         }
 
-        println("DEBUG: Clock-out using token: Bearer $token. Active attendance ID: ${currentAttendanceRecord.id}")
-
         viewModelScope.launch {
-            try {
+            // --- START OF THE UPDATE ---
 
-                println("DEBUG: Sending clock-out request.")
-                val response = apiService.clockOut("Bearer $token")
+            // 1. Get the user's current location using our new reusable function.
+            val location = getCurrentLocation()
+
+            // 2. Check if location was successfully retrieved. If not, abort the clock-out.
+            //    The getCurrentLocation() function will have already shown a toast to the user.
+            if (location == null) {
+                _showDialog.value = false // Close the dialog
+                return@launch
+            }
+
+            // 3. Extract lat and long from the location object.
+            val currentLat = location.latitude
+            val currentLng = location.longitude
+
+            // 4. Create the request body with the real latitude and longitude.
+            val clockOutRequestBody = ClockOutRequest(
+                currentLatitude = currentLat,
+                currentLongitude = currentLng
+            )
+
+            val attendanceId = currentAttendanceRecord.id
+            println("DEBUG: Sending clock-out request for attendance ID: $attendanceId with location (Lat: $currentLat, Lng: $currentLng)")
+
+            // 5. Perform the API call.
+            try {
+                val response = apiService.clockOut(
+                    token = "Bearer $token",
+                    attendanceId = attendanceId,
+                    body = clockOutRequestBody
+                )
+                // --- END OF THE UPDATE ---
 
                 if (response.isSuccessful) {
-                    val successMessage = response.body()?.message ?: "Clocked out successfully from server."
+                    val successMessage = response.body()?.message ?: "Clocked out successfully!"
                     println("DEBUG: Clock-out successful from server: $successMessage")
-                    showToast(successMessage)
+                    _showToastEvent.emit(successMessage)
 
-
-                    _isRunning.value = false
-                    timerJob?.cancel()
-                    _elapsedTime.value = 0L
-                    _todayAttendance.value = null
+                    // Update UI state ONLY after successful API call
+                    revertClockInState() // Use helper to reset timer and state
+                    _todayAttendance.value = null // Clear the old attendance record
 
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    val errorMessage = "Clock-out failed: Server error ${response.code()}. Details: ${errorBody ?: "No specific error message"}"
+                    val errorMessage = "Clock-out failed: ${errorBody ?: "Server error ${response.code()}"}"
                     println("DEBUG: $errorMessage")
-                    showToast(errorMessage)
-
+                    _showToastEvent.emit(errorMessage)
                 }
             } catch (e: Exception) {
+                val errorMessage = "Clock-out failed due to a network error."
                 println("DEBUG: Clock-out API call exception - ${e.localizedMessage}")
-                e.printStackTrace()
-                showToast("Clock-out failed due to a network error. Please check your internet connection and try again.")
-
+                _showToastEvent.emit(errorMessage)
             } finally {
-                fetchTodayAttendance()
+                // Always close the dialog
                 _showDialog.value = false
             }
         }

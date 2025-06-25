@@ -71,7 +71,7 @@ import androidx.compose.ui.window.Dialog
 import android.Manifest
 import android.content.IntentSender
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult // <--- ADD THIS IMPORT
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.wrapContentHeight

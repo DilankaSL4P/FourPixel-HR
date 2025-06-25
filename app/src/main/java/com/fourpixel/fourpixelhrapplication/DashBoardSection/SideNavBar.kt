@@ -182,9 +182,9 @@ fun SideDrawer(navController: NavController,
                                     when (child) {
 
                                         "Tasks" -> navController.navigate("tasks")
-                                        "Projects" -> navController.navigate("projects")
+                                        "Projects" -> navController.navigate("projects/${userName}")
                                         "Leaves" -> navController.navigate("leaves")
-                                        "Attendance" -> navController.navigate("attendance")
+                                        //"Attendance" -> navController.navigate("attendance")
 
                                     }
                                 }

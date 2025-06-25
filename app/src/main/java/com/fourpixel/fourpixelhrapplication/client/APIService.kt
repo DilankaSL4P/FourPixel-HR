@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 import com.google.gson.JsonElement
+import retrofit2.http.Query
 
 //Login
 data class LoginRequest(
@@ -30,6 +31,7 @@ data class UserData(
 
 //User Data
 data class User(
+    @SerializedName("id") val id: Int,
     @SerializedName("name") val name: String,
     @SerializedName("email") val email: String,
     @SerializedName("image_url") val imageUrl: String?,
@@ -140,11 +142,17 @@ data class ClockInSuccessData(
 )
 
 //Attendance and Clock out classes
+data class ClockOutRequest(
+    //@SerializedName("id") val attendanceId: Int,
+    @SerializedName("currentLatitude") val currentLatitude: Double?,
+    @SerializedName("currentLongitude") val currentLongitude: Double?
+
+)
 data class TodayAttendanceResponse(
     @SerializedName("data") val data: TodayAttendanceRootData?
 )
 
-data class TodayAttendanceData(
+data class TodayAttendaceData(
     @SerializedName("id") val id: Int,
     @SerializedName("clock_in_time") val clockInTime: String,
     @SerializedName("clock_out_time") val clockOutTime: String?,
@@ -250,13 +258,24 @@ data class LeaveItem(
     @SerializedName("status") val status: String
 )
 
-data class AddLeaveRequest(
-    @SerializedName("item") val item: LeaveItem,
-    @SerializedName("users") val users: List<Any>,
-    @SerializedName("types") val types: List<Any>,
+//Apply Leave Classes
+data class UserForLeave(
+    @SerializedName("id") val id: Int
+)
+
+data class TypeForLeave(
+    @SerializedName("id") val id: Int
+)
+
+data class ApplyLeaveRequest(
+    @SerializedName("unique_id") val uniqueId: String,
+    @SerializedName("duration") val duration: String,
+    @SerializedName("leave_date") val leaveDate: String,
+    @SerializedName("reason") val reason: String,
     @SerializedName("status") val status: String,
-    @SerializedName("error") val error: JsonElement?,
-    @SerializedName("push") val push: JsonElement?
+    @SerializedName("half_day_type") val halfDayType: String?,
+    @SerializedName("user") val user: UserForLeave,
+    @SerializedName("type") val type: TypeForLeave
 )
 
 
@@ -292,12 +311,20 @@ interface ApiService {
 
     @GET("api/v1/attendance/today")
     suspend fun getTodayAttendance(
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
     ): Response<TodayAttendanceResponse>
 
     @POST("api/v1/attendance/clock-out")
     suspend fun clockOut(
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
+        @Query("id") attendanceId: Int,
+        @Body body: ClockOutRequest
+    ): Response<GenericResponse>
+
+    @POST("api/v1/leave")
+    suspend fun applyLeave(
+        @Header("Authorization") token: String,
+        @Body request: ApplyLeaveRequest
     ): Response<GenericResponse>
 
 

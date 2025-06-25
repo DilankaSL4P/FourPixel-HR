@@ -24,6 +24,7 @@ import com.fourpixel.fourpixelhrapplication.HR.MonthlyAttendanceScreen
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.composable
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
+import java.net.URLDecoder
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -71,13 +72,12 @@ fun AppNavigation() {
                 navArgument("userRole") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val userName = backStackEntry.arguments?.getString("userName") ?: "User"
+            val userName = URLDecoder.decode(backStackEntry.arguments?.getString("userName") ?: "User", "UTF-8")
             val userImageUrl = backStackEntry.arguments?.getString("userImageUrl") ?: ""
             val userRole = backStackEntry.arguments?.getString("userRole") ?: ""
             DashboardView(navController, userName, userImageUrl, userRole)
         }
 
-        // Repeat for all other routes
         composable("leaves") {
             LeavesScreen(navController)
         }
@@ -88,16 +88,23 @@ fun AppNavigation() {
 
         composable(
             "projects/{userName}",
-            arguments = listOf(
-                navArgument("userName") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("userName") { type = NavType.StringType })
         ) { backStackEntry ->
-            val userName = backStackEntry.arguments?.getString("userName") ?: "User"
-            ProjectListScreen(navController = navController, userNameFromNav = userName)
+            val userName = backStackEntry.arguments?.getString("userName") ?: ""
+            ProjectListScreen(navController, userName)
         }
 
-        composable("applyLeave") {
-            ApplyLeavesScreen(navController)
+
+        composable(
+            "applyLeave/{token}/{userId}",
+            arguments = listOf(
+                navArgument("token") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val token = backStackEntry.arguments?.getString("token") ?: ""
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            ApplyLeavesScreen(token, userId, navController)
         }
 
         composable("noticeboard") {

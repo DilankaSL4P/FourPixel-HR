@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.HR
+package com.fourpixel.fourpixelhrapplication.hr
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,12 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.fourpixel.fourpixelhrapplication.DashBoardSection.getDayWithSuffix
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import com.fourpixel.fourpixelhrapplication.client.Leave
 import java.text.SimpleDateFormat

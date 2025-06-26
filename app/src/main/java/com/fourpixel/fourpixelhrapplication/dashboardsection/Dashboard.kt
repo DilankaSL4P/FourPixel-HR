@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.DashBoardSection
+package com.fourpixel.fourpixelhrapplication.dashboardsection
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -74,12 +74,13 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import com.fourpixel.fourpixelhrapplication.client.Notice
 import com.google.android.gms.location.LocationServices
+import androidx.compose.foundation.lazy.items
 
 
 @Composable
@@ -109,8 +110,10 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     val pendingTasks by viewModel.pendingTasks.collectAsState()
 
     val notices by viewModel.notices.collectAsState()
-    var showNoticeBanner by remember { mutableStateOf(true) }
-    var showNoticePopup by remember { mutableStateOf(false) }
+    val selectedNotice by viewModel.selectedNotice.collectAsState()
+
+    /*var showNoticeBanner by remember { mutableStateOf(true) }
+    var showNoticePopup by remember { mutableStateOf(false) }*/
 
     var displayText by remember { mutableStateOf("Work from") }
 
@@ -277,11 +280,18 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
             item { Spacer(modifier = Modifier.height(20.dp)) }
 
             //Notice Pop up
-            if (notices.isNotEmpty() && showNoticeBanner) {
+            if (notices.isNotEmpty()) {
                 item {
-                    NoticeBanner(notice = notices.toString()) {
-                        showNoticePopup = true
-                    }
+                    // We assume the first notice in the list is the newest one.
+                    // This is common for API responses.
+                    val latestNotice = notices.first()
+
+                    NoticeBanner(
+                        // The onClick will now always select the latest notice.
+                        onClick = {
+                            viewModel.onNoticeClicked(latestNotice)
+                        }
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
@@ -490,11 +500,13 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
         }
 
     }
-    if (showNoticePopup) {
-        NoticePopup(notice = notices.toString()) {
-            showNoticePopup = false
-            showNoticeBanner = false
-        }
+    selectedNotice?.let { notice ->
+        NoticePopup(
+            notice = notice, // Pass the selected Notice object to the popup
+            onDismiss = {
+                viewModel.onPopupDismissed() // Tell the VM to dismiss the popup
+            }
+        )
     }
 }
 
@@ -617,16 +629,19 @@ fun DropdownMenu(viewModel: DashboardViewModelJP) {
 
 
 @Composable
-fun NoticeBanner(notice: String, onClick: () -> Unit) {
+fun NoticeBanner(onClick: () -> Unit) { // The 'notice: Notice' parameter is no longer needed
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFFFFF4E1), shape = RoundedCornerShape(12.dp))
             .clickable { onClick() }
-            .padding(16.dp)
+            .padding(16.dp),
+        // Center the text vertically within the Box
+        contentAlignment = Alignment.CenterStart
     ) {
+        // Use the new generic text as requested
         Text(
-            text = "🔔 New Notice Available - Tap to Read",
+            text = "🔔 New Notifications Available. Tap to view.",
             color = Color.Black,
             fontFamily = poppinsFontFamily,
             fontWeight = FontWeight.SemiBold,
@@ -636,19 +651,21 @@ fun NoticeBanner(notice: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun NoticePopup(notice: String, onDismiss: () -> Unit) {
+fun NoticePopup(notice: Notice, onDismiss: () -> Unit) { // Changed 'notice: String' to 'notice: Notice'
     androidx.compose.material3.AlertDialog(
         onDismissRequest = { onDismiss() },
         title = {
+            // Display the actual notice title. Adjust "notice.title" if your property name is different.
             Text(
-                text = notice,
+                text = notice.heading,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
         },
         text = {
+            // Display the actual notice description. Adjust "notice.description" if your property is different.
             Text(
-                text = notice,
+                text = notice.description ?: "No description",
                 fontSize = 16.sp
             )
         },

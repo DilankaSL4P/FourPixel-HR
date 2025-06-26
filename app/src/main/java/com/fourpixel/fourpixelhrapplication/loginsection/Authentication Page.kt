@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.LoginSection
+package com.fourpixel.fourpixelhrapplication.loginsection
 
 
 import android.widget.Toast

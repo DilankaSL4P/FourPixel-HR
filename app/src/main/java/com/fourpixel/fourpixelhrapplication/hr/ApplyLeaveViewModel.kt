@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.HR
+package com.fourpixel.fourpixelhrapplication.hr
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

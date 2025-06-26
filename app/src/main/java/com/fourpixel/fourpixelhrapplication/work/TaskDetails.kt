@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.Work
+package com.fourpixel.fourpixelhrapplication.work
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.background

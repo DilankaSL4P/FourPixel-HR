@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.DashBoardSection
+package com.fourpixel.fourpixelhrapplication.dashboardsection
 
 import android.app.Application
 import android.content.Context
@@ -25,7 +25,6 @@ import com.fourpixel.fourpixelhrapplication.client.TodayAttendanceRootData
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
 import com.google.android.gms.location.Priority
 import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.common.api.ResolvableApiException
@@ -62,8 +61,10 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _notices = MutableStateFlow<List<Notice>>(emptyList())
     val notices = _notices.asStateFlow()
 
-    private val _showNoticePopup = MutableStateFlow(false)
-    val showNoticePopup = _showNoticePopup.asStateFlow()
+    private val _selectedNotice = MutableStateFlow<Notice?>(null)
+    val selectedNotice = _selectedNotice.asStateFlow()
+
+    private val KEY_VIEWED_NOTICE_IDS = "viewed_notice_ids"
 
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
 
@@ -103,7 +104,6 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             fetchTaskCount()
             fetchNotices()
         }
-        fetchNotices()
     }
 
 
@@ -223,10 +223,22 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             try {
                 val response = apiService.getNotices("Bearer $token")
                 if (response.isSuccessful) {
-                    val noticesList = response.body()?.data ?: emptyList()
-                    _notices.value = noticesList
+                    val noticesFromApi = response.body()?.data ?: emptyList()
 
-                    _showNoticePopup.value = noticesList.isNotEmpty()
+                    // --- START of new logic ---
+                    // 1. Load the set of viewed notice IDs from SharedPreferences.
+                    val viewedIds = sharedPreferences.getStringSet(KEY_VIEWED_NOTICE_IDS, emptySet()) ?: emptySet()
+
+                    // 2. Filter the list from the API to get only unread notices.
+                    val unreadNotices = noticesFromApi.filter { notice ->
+                        // Keep the notice only if its ID is NOT in the viewedIds set.
+                        notice.id.toString() !in viewedIds
+                    }
+
+                    // 3. Update the StateFlow with only the unread notices.
+                    _notices.value = unreadNotices
+                    // --- END of new logic ---
+
                 } else {
                     println("DEBUG: Error fetching notices - ${response.code()}")
                 }
@@ -235,6 +247,37 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             }
         }
     }
+
+    fun onNoticeClicked(notice: Notice) {
+        _selectedNotice.value = notice
+    }
+
+    fun onPopupDismissed() {
+        // --- START of new logic ---
+        // 1. Get the notice that was just viewed.
+        val viewedNotice = _selectedNotice.value ?: return
+
+        // 2. Load the current set of viewed IDs, creating a mutable copy.
+        val viewedIds = sharedPreferences.getStringSet(KEY_VIEWED_NOTICE_IDS, emptySet()) ?: emptySet()
+        val newViewedIds = viewedIds.toMutableSet()
+
+        // 3. Add the ID of the newly viewed notice to the set.
+        newViewedIds.add(viewedNotice.id.toString())
+
+        // 4. Save the updated set back to SharedPreferences.
+        sharedPreferences.edit()
+            .putStringSet(KEY_VIEWED_NOTICE_IDS, newViewedIds)
+            .apply()
+        // --- END of new logic ---
+
+        // Hide the popup
+        _selectedNotice.value = null
+
+        // Finally, update the UI immediately by removing the notice from the current list.
+        // This makes the banner disappear without needing to re-fetch from the network.
+        _notices.value = _notices.value.filter { it.id != viewedNotice.id }
+    }
+
 
     fun fetchTodayAttendance() {
         viewModelScope.launch {
@@ -341,7 +384,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 if (e is ResolvableApiException) {
                     // Location settings are not satisfied, but can be fixed by user.
                     println("DEBUG: Location settings not satisfied, but resolvable. Prompting user...")
-                    _resolveLocationSettingsEvent.emit(e) // Emit event for UI to resolve
+                    _resolveLocationSettingsEvent.emit(e)
                     showToast("Please enable location services to clock in.")
                 } else {
                     // Other errors

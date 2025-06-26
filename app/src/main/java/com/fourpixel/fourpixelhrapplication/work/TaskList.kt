@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.Work
+package com.fourpixel.fourpixelhrapplication.work
 
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -19,16 +19,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.fourpixel.fourpixelhrapplication.client.Task
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun TaskListScreen(navController: NavController, viewModel: TaskListViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -187,7 +185,7 @@ fun TaskCard(task: Task,onClick: () -> Unit) {
             fontFamily = poppinsFontFamily
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Divider(color = Color(0xFFDADADA), thickness = 1.dp)
+        HorizontalDivider(thickness = 1.dp, color = Color(0xFFDADADA))
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -245,14 +243,14 @@ fun CircleInitial(initial: String) {
 }
 
 
-data class Task(
+/*data class Task(
     val id: Int,
     val heading: String,
     val status: String,
     val dueDate: String?,
     val projectName: String?,
     val assignedUser: String?
-)
+)*/
 
 
 

@@ -115,8 +115,8 @@ data class Leave(
 data class Notice(
     @SerializedName("id") val id: Int,
     @SerializedName("heading") val heading: String,
-    @SerializedName("description") val description: String,
-    @SerializedName("to") val to: String
+    @SerializedName("description") val description: String?,
+
 )
 
 data class NoticeResponse(

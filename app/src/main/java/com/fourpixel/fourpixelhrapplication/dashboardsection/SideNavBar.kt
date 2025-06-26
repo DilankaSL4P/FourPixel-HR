@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.DashBoardSection
+package com.fourpixel.fourpixelhrapplication.dashboardsection
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
@@ -52,7 +51,7 @@ fun SideDrawer(navController: NavController,
         MenuItem("Work", listOf("Projects", "Tasks")),
         MenuItem("HR", listOf("Leaves", "Attendance")),
         //MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
-        //MenuItem("NoticeBoard"),
+        MenuItem("NoticeBoard"),
         //MenuItem("About"),
         MenuItem("Logout")
     )

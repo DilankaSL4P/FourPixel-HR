@@ -49,7 +49,7 @@ fun SideDrawer(navController: NavController,
     val menuItems = listOf(
         MenuItem("Dashboard"),
         MenuItem("Work", listOf("Projects", "Tasks")),
-        MenuItem("HR", listOf("Leaves", "Attendance")),
+        MenuItem("HR", listOf("Leaves")),
         //MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
         MenuItem("NoticeBoard"),
         //MenuItem("About"),
@@ -192,7 +192,7 @@ fun SideDrawer(navController: NavController,
                 }
             }
         }
-        Spacer(modifier = Modifier.height(230.dp))
+        Spacer(modifier = Modifier.height(250.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Spacer(modifier = Modifier.width(24.dp))
             Text(

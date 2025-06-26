@@ -53,7 +53,7 @@ class NoticeViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val response = apiService.getNotices("Bearer $token")
                 if (response.isSuccessful) {
-                    _notices.value = response.body()?.data ?: emptyList()
+                    _notices.value = response.body()?.data?.reversed() ?: emptyList()
                 } else {
                     _errorMessage.value = "Error: Failed to load notices (Code: ${response.code()})"
                 }
@@ -63,6 +63,7 @@ class NoticeViewModel(application: Application) : AndroidViewModel(application) 
             } finally {
                 _isLoading.value = false
             }
+
         }
     }
 }

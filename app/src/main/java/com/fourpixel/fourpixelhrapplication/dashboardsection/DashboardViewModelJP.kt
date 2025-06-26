@@ -284,12 +284,38 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             try {
                 val token = sharedPreferences.getString("auth_token", null) ?: return@launch
                 val response = apiService.getTodayAttendance("Bearer $token")
+
                 if (response.isSuccessful) {
                     _todayAttendance.value = response.body()?.data
                     println("DEBUG: Fetched today’s attendance - ${response.body()?.data}")
+
+                    val attendanceRecord = _todayAttendance.value?.attendanceRecord
+                    val clockInTimeStr = attendanceRecord?.clockInTime
+
+                    if (!clockInTimeStr.isNullOrBlank()) {
+                        try {
+                            // Parse clock_in_time (assumes ISO 8601 format like "2024-06-26T04:30:00.000Z")
+                            val formatter = java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
+                            val clockInInstant = java.time.OffsetDateTime.parse(clockInTimeStr, formatter).toInstant()
+                            val nowInstant = java.time.Instant.now()
+
+                            val elapsedSeconds = java.time.Duration.between(clockInInstant, nowInstant).seconds
+
+                            if (elapsedSeconds > 0) {
+                                _isRunning.value = true
+                                _elapsedTime.value = elapsedSeconds
+                                startTimer()
+                                println("DEBUG: Timer resumed with elapsed seconds: $elapsedSeconds")
+                            }
+                        } catch (e: Exception) {
+                            println("DEBUG: Error parsing clock-in time - ${e.localizedMessage}")
+                        }
+                    }
+
                 } else {
                     println("DEBUG: Failed to fetch today's attendance - ${response.code()}")
                 }
+
             } catch (e: Exception) {
                 println("DEBUG: Error fetching today's attendance - ${e.localizedMessage}")
             }

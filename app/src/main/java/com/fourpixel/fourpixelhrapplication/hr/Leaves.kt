@@ -27,12 +27,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import com.fourpixel.fourpixelhrapplication.client.Leave
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun LeavesScreen(
     navController: NavController,
+    token: String,
+    userId: Int,
     viewModel: LeavesViewModel = viewModel()
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -40,6 +43,8 @@ fun LeavesScreen(
     val filteredLeavesByMonth by viewModel.filteredLeavesByMonth.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val encodedToken = URLEncoder.encode(token, "UTF-8")
+
 
     Column(
         modifier = Modifier
@@ -61,7 +66,7 @@ fun LeavesScreen(
             )
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = { navController.navigate("applyLeave") },
+                onClick = { navController.navigate("applyLeave/$encodedToken/$userId") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9C75A)),
                 shape = RoundedCornerShape(12.dp)
             ) {

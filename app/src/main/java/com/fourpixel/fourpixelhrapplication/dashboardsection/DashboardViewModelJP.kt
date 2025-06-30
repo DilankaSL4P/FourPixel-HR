@@ -94,6 +94,10 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _showToastEvent = MutableSharedFlow<String>()
     val showToastEvent = _showToastEvent.asSharedFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
+
     private var timerJob: Job? = null
 
     init {
@@ -380,6 +384,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
 
        //Get location
         viewModelScope.launch {
+            _isLoading.value = true
             var currentLatitude: Double? = null
             var currentLongitude: Double? = null
 
@@ -418,6 +423,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                     showToast("Failed to get your current location. Please ensure location services are enabled and try again.")
                 }
                 revertClockInState()
+            } finally{
+                _isLoading.value = false
             }
         }
     }
@@ -426,6 +433,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         _isRunning.value = true
         _elapsedTime.value = 0L
         startTimer()
+        _isLoading.value = true
 
         val workingFrom = "Office"
         try {
@@ -464,6 +472,9 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             e.printStackTrace()
             showToast("Clock-in failed due to a network error. Please check your internet connection.")
             revertClockInState()
+        }
+        finally {
+            _isLoading.value = false
         }
     }
 
@@ -514,6 +525,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
 
         viewModelScope.launch {
+
+            _isLoading.value = true
             // 3. Get the user's current location
             val location = getCurrentLocation()
             if (location == null) {
@@ -570,6 +583,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             } finally {
                 // 7. Ensure the dialog is always closed
                 _showDialog.value = false
+                _isLoading.value = false
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.work // Or your UI package
+package com.fourpixel.fourpixelhrapplication.notices
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,46 +15,43 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.fourpixel.fourpixelhrapplication.client.Notice
-// Make sure to import your ViewModel
 import com.fourpixel.fourpixelhrapplication.features.noticeboard.NoticeViewModel
+import com.fourpixel.fourpixelhrapplication.ui.theme.ArcSpinner
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoticeBoardScreen(
     navController: NavController,
-    // Use the NoticeViewModel we created
     viewModel: NoticeViewModel = viewModel()
 ) {
-    // Collect all the states from the ViewModel
+
     val notices by viewModel.notices.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
+
 
     val canNavigateBack = navController.previousBackStackEntry != null
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            // Add vertical padding if needed, similar to what Scaffold might provide
+
             .padding(vertical = 16.dp)
     ) {
-        // 1. TopAppBar Section
-        // The Spacer and TopAppBar are now direct children of the Column.
-        Spacer(modifier = Modifier.height(24.dp)) // Adjusted spacer as needed
+
+        Spacer(modifier = Modifier.height(24.dp))
         TopAppBar(
             title = {
                 Text(
                     text = "Notice Board",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    // fontFamily = poppinsFontFamily // Uncomment if you have this font family
+                    fontFamily = poppinsFontFamily
                 )
             },
             navigationIcon = {
@@ -67,31 +64,31 @@ fun NoticeBoardScreen(
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent
             ),
-            // Modifiers for padding can be applied directly here
+
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        // 2. Content Section
+
         Box(
             modifier = Modifier
-                .weight(1f) // This makes the Box fill all available space in the Column
+                .weight(1f)
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center // Center the ProgressIndicator and Error messages
+            contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
-                CircularProgressIndicator()
+                ArcSpinner()
             }  else if (notices.isEmpty()) {
                 Text("No notices available at the moment.")
             } else {
                 LazyColumn(
-                    // The LazyColumn now fills the Box, which has the correct size
+
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
                 ) {
                     items(notices) { notice ->
-                        NoticeCard(notice) // Your item composable
+                        NoticeCard(notice)
                     }
                 }
             }
@@ -113,10 +110,9 @@ fun NoticeCard(notice: Notice) {
             fontWeight = FontWeight.Bold,
             fontFamily = poppinsFontFamily
         )
+
         Spacer(modifier = Modifier.height(6.dp))
-        // Use the official html converter from Android to display formatted text
-        // For this, you would need to add a dependency and use an AndroidView
-        // For simplicity, we'll just show the raw text.
+
         Text(
             text = notice.description ?: "No description",
             fontSize = 14.sp,

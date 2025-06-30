@@ -81,10 +81,20 @@ import androidx.core.content.ContextCompat
 import com.fourpixel.fourpixelhrapplication.client.Notice
 import com.google.android.gms.location.LocationServices
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
+import com.fourpixel.fourpixelhrapplication.ui.theme.ArcSpinner
 
 
 @Composable
-fun DashboardView(navController: NavController, userName: String, userImageUrl: String, userRole: String) {
+fun DashboardView(
+    navController: NavController,
+    userName: String,
+    userImageUrl: String,
+    userRole: String,
+    token: String,
+    userId: Int
+) {
     val viewModel: DashboardViewModelJP = androidx.lifecycle.viewmodel.compose.viewModel()
 
     LaunchedEffect(userName) {
@@ -122,6 +132,9 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     val selectedOption by viewModel.selectedOption.collectAsState()
+
+    val isLoading by viewModel.isLoading.collectAsState()
+
 
 
 
@@ -212,299 +225,330 @@ fun DashboardView(navController: NavController, userName: String, userImageUrl: 
         )
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet(
+                    modifier = Modifier.width(280.dp)
+                ) {
+                    SideDrawer(navController, userName, userImageUrl, userRole, token, userId)
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet(
-                modifier = Modifier.width(280.dp)
-            ) {
-                SideDrawer(
-                    navController = navController,
-                    userName = userName,
-                    userImageUrl = userImageUrl,
-                    userRole = userRole,
-                )
+                }
             }
-        }
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item { Spacer(modifier = Modifier.height(24.dp)) }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    //Navigation Drawer
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
-                        },
-                        modifier = Modifier
-                            .background(Color(0xFFF2F2F2), shape = RoundedCornerShape(4.dp))
-                    ) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
-                    }
+                item {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        //Notifications
+                        //Navigation Drawer
                         IconButton(
-                            onClick = { /* Show notifications */ },
-                            modifier = Modifier.background(Color(0xFFF2F2F2), shape = CircleShape)
-                        ) {
-                            Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notifications")
-                        }
-                        Image(
-                            painter = rememberAsyncImagePainter(userImageUrl),
-                            contentDescription = "Profile Image",
+                            onClick = {
+                                scope.launch {
+                                    drawerState.open()
+                                }
+                            },
                             modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .clickable { /* Handle profile click */ },
-                            contentScale = ContentScale.Crop
+                                .background(Color(0xFFF2F2F2), shape = RoundedCornerShape(4.dp))
+                        ) {
+                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            //Notifications
+                            IconButton(
+                                onClick = { /* Show notifications */ },
+                                modifier = Modifier.background(
+                                    Color(0xFFF2F2F2),
+                                    shape = CircleShape
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notifications"
+                                )
+                            }
+                            Image(
+                                painter = rememberAsyncImagePainter(userImageUrl),
+                                contentDescription = "Profile Image",
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .clickable { /* Handle profile click */ },
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                }
+
+                item { Spacer(modifier = Modifier.height(20.dp)) }
+
+                //Notice Pop up
+                if (notices.isNotEmpty()) {
+                    item {
+                        // We assume the first notice in the list is the newest one.
+                        // This is common for API responses.
+                        val latestNotice = notices.first()
+
+                        NoticeBanner(
+                            // The onClick will now always select the latest notice.
+                            onClick = {
+                                viewModel.onNoticeClicked(latestNotice)
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+
+                //Welcome Text
+                item {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Welcome, $displayedUserName !",
+                            fontFamily = poppinsFontFamily,
+                            style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
                         )
                     }
                 }
-            }
 
-            item { Spacer(modifier = Modifier.height(20.dp)) }
+                item { Spacer(modifier = Modifier.height(6.dp)) }
 
-            //Notice Pop up
-            if (notices.isNotEmpty()) {
+                //Calling the Date Display Function
                 item {
-                    // We assume the first notice in the list is the newest one.
-                    // This is common for API responses.
-                    val latestNotice = notices.first()
-
-                    NoticeBanner(
-                        // The onClick will now always select the latest notice.
-                        onClick = {
-                            viewModel.onNoticeClicked(latestNotice)
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(16.dp)) }
-
-            //Welcome Text
-            item {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Welcome, $displayedUserName !",
-                        fontFamily = poppinsFontFamily,
-                        style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
-                    )
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(6.dp)) }
-
-            //Calling the Date Display Function
-            item {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    TodayDateDisplay()
-                }
-            }
-
-            item { Spacer(modifier = Modifier.height(30.dp)) }
-
-            //Clock
-            item {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(250.dp)
-                ) {
                     Box(
-                        modifier = Modifier
-                            .size(250.dp)
-                            .background(Color(0xFFFFC107), shape = CircleShape)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(247.dp)
-                            .background(Color.White, shape = CircleShape)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(225.dp)
-                            .background(
-                                if (isRunning) Color(0xFFFCE7C2) else Color(0xFFF5F5F5),
-                                shape = CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.CenterStart
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            val hours = (elapsedTime / 3600).toString().padStart(2, '0')
-                            val minutes = ((elapsedTime % 3600) / 60).toString().padStart(2, '0')
-                            val seconds = (elapsedTime % 60).toString().padStart(2, '0')
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "$hours:$minutes",
-                                    fontSize = 48.sp,
-                                    fontFamily = poppinsFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                            }
-                            Text(
-                                text = ":$seconds",
-                                fontSize = 24.sp,
-                                fontFamily = poppinsFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.Gray
-                            )
-                            Text(
-                                text = if (isRunning) "Working" else "Ready",
-                                fontSize = 16.sp,
-                                fontFamily = poppinsFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.Gray
-                            )
-                        }
+                        TodayDateDisplay()
                     }
                 }
-            }
 
-            item { Spacer(modifier = Modifier.height(30.dp)) }
+                item { Spacer(modifier = Modifier.height(30.dp)) }
 
-            item {
-                DropdownMenu(viewModel)
-            }
+                //Clock
+                item {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(250.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(250.dp)
+                                .background(Color(0xFFFFC107), shape = CircleShape)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(247.dp)
+                                .background(Color.White, shape = CircleShape)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(225.dp)
+                                .background(
+                                    if (isRunning) Color(0xFFFCE7C2) else Color(0xFFF5F5F5),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                val hours = (elapsedTime / 3600).toString().padStart(2, '0')
+                                val minutes =
+                                    ((elapsedTime % 3600) / 60).toString().padStart(2, '0')
+                                val seconds = (elapsedTime % 60).toString().padStart(2, '0')
 
-            item { Spacer(modifier = Modifier.height(10.dp)) }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Clock-in Button
-                    Button(
-                        onClick = {
-                            // Check for permissions first
-                            val hasFineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                            val hasCoarseLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
-                            if (hasFineLocation || hasCoarseLocation) {
-                                viewModel.handleClockInButtonClick(
-                                    settingsClient = settingsClient,
-                                    fusedLocationClient = fusedLocationClient,
-                                    context = context
-                                )
-                            } else {
-                                requestLocationPermissionLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "$hours:$minutes",
+                                        fontSize = 48.sp,
+                                        fontFamily = poppinsFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
                                     )
+                                }
+                                Text(
+                                    text = ":$seconds",
+                                    fontSize = 24.sp,
+                                    fontFamily = poppinsFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Gray
+                                )
+                                Text(
+                                    text = if (isRunning) "Working" else "Ready",
+                                    fontSize = 16.sp,
+                                    fontFamily = poppinsFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color.Gray
                                 )
                             }
-                        },
-                        enabled = !isRunning && (selectedOption != "Working From"),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isRunning) Color.Gray else Color(0xFFFFC107)
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                    ) {
-                        Text(
-                            text = "Clock-in",
-                            fontFamily = poppinsFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                    }
-
-                    //ClockOut Button
-                    Button(
-                        onClick = { viewModel.showClockOutDialog() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!isRunning) Color.Gray else Color(0xFFFFC107)
-                        ),
-                        enabled = isRunning,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp)
-                    ) {
-                        Text(
-                            text = "Clock-out",
-                            fontFamily = poppinsFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
+                        }
                     }
                 }
-            }
 
-            if (showDialog) {
+                item { Spacer(modifier = Modifier.height(30.dp)) }
+
                 item {
-                    ClockOutDialog(
-                        viewModel = viewModel,
-                        onDismissRequest = {
+                    DropdownMenu(viewModel)
+                }
 
-                            viewModel.dismissDialog()
-                        },
-                        onConfirmation = {
-                            // Timer is stopped and the API call is made.
-                            viewModel.confirmClockOut()
-                        },
-                        painter = painterResource(id = R.drawable.wrapup),
-                        imageDescription = "Clock-out confirmation"
-                    )
+                item { Spacer(modifier = Modifier.height(10.dp)) }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Clock-in Button
+                        Button(
+                            onClick = {
+                                // Check for permissions first
+                                val hasFineLocation = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                val hasCoarseLocation = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                                if (hasFineLocation || hasCoarseLocation) {
+                                    viewModel.handleClockInButtonClick(
+                                        settingsClient = settingsClient,
+                                        fusedLocationClient = fusedLocationClient,
+                                        context = context
+                                    )
+                                } else {
+                                    requestLocationPermissionLauncher.launch(
+                                        arrayOf(
+                                            Manifest.permission.ACCESS_FINE_LOCATION,
+                                            Manifest.permission.ACCESS_COARSE_LOCATION
+                                        )
+                                    )
+                                }
+                            },
+                            enabled = !isRunning && (selectedOption != "Working From"),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isRunning) Color.Gray else Color(0xFFFFC107)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                        ) {
+                            Text(
+                                text = "Clock-in",
+                                fontFamily = poppinsFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+
+                        //ClockOut Button
+                        Button(
+                            onClick = { viewModel.showClockOutDialog() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (!isRunning) Color.Gray else Color(0xFFFFC107)
+                            ),
+                            enabled = isRunning,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                        ) {
+                            Text(
+                                text = "Clock-out",
+                                fontFamily = poppinsFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+                    }
+                }
+
+
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+
+                item {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Status",
+                            fontFamily = poppinsFontFamily,
+                            style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
+                        )
+                    }
+                }
+
+                item { Spacer(modifier = Modifier.height(10.dp)) }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        StatusCard("Assigned", "Projects", assignedProjects.toString(), Color.Black)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        StatusCard("Pending", "Tasks", pendingTasks.toString(), Color(0xFF88B04B))
+                    }
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+        }
+    }
+    if (showDialog) {
+        val wrapUpPainter = painterResource(id = R.drawable.wrapup)
+        // No need for a Box or zIndex. The Dialog composable handles the overlay.
+        ClockOutDialog(
+            viewModel = viewModel,
+            onDismissRequest = { viewModel.dismissDialog() },
+            onConfirmation = {
+                // When the user confirms, you likely trigger the loading state.
+                viewModel.confirmClockOut()
+            },
+            painter = wrapUpPainter,
+            imageDescription = "Clock-out confirmation"
+        )
+    }
 
-            item {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "Status",
-                        fontFamily = poppinsFontFamily,
-                        style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold),
-                    )
-                }
-            }
+    if (isLoading) {
+        Dialog(
+            onDismissRequest = { /* Do nothing: user cannot dismiss the loader */ },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
 
-            item { Spacer(modifier = Modifier.height(10.dp)) }
-
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    StatusCard("Assigned", "Projects", assignedProjects.toString(), Color.Black)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    StatusCard("Pending", "Tasks", pendingTasks.toString(), Color(0xFF88B04B))
-                }
+                // Allow the dialog to expand to the full screen width
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize() // Now this modifier will correctly fill the entire screen
+                    .background(Color.White.copy(alpha = 0.8f)), // Your dimming effect
+                contentAlignment = Alignment.Center
+            ) {
+                ArcSpinner()
             }
         }
-
     }
+
+    // 3. Handle the Notice Popup (assuming it also uses a Dialog or Popup)
     selectedNotice?.let { notice ->
         NoticePopup(
-            notice = notice, // Pass the selected Notice object to the popup
+            notice = notice,
             onDismiss = {
-                viewModel.onPopupDismissed() // Tell the VM to dismiss the popup
+                viewModel.onPopupDismissed()
             }
         )
     }

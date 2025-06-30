@@ -8,7 +8,7 @@ import com.fourpixel.fourpixelhrapplication.hr.ApplyLeavesScreen
 import com.fourpixel.fourpixelhrapplication.hr.LeavesScreen
 import com.fourpixel.fourpixelhrapplication.loginsection.LoginScreen
 import com.fourpixel.fourpixelhrapplication.work.AddNewTaskScreen
-import com.fourpixel.fourpixelhrapplication.work.NoticeBoardScreen
+import com.fourpixel.fourpixelhrapplication.notices.NoticeBoardScreen
 import com.fourpixel.fourpixelhrapplication.work.ProjectListScreen
 import com.fourpixel.fourpixelhrapplication.work.TaskDetailScreen
 import com.fourpixel.fourpixelhrapplication.work.TaskListScreen
@@ -24,7 +24,7 @@ import java.net.URLDecoder
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AppNavigation() {
-    val navController = rememberAnimatedNavController() // use this instead of rememberNavController
+    val navController = rememberAnimatedNavController()
 
     AnimatedNavHost(
         navController = navController,
@@ -60,22 +60,37 @@ fun AppNavigation() {
         }
 
         composable(
-            "dashboard/{userName}/{userImageUrl}/{userRole}",
+            "dashboard/{userName}/{userImageUrl}/{userRole}/{token}/{userId}",
             arguments = listOf(
                 navArgument("userName") { type = NavType.StringType },
                 navArgument("userImageUrl") { type = NavType.StringType },
-                navArgument("userRole") { type = NavType.StringType }
+                navArgument("userRole") { type = NavType.StringType },
+                navArgument("token") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
             val userName = URLDecoder.decode(backStackEntry.arguments?.getString("userName") ?: "User", "UTF-8")
             val userImageUrl = backStackEntry.arguments?.getString("userImageUrl") ?: ""
             val userRole = backStackEntry.arguments?.getString("userRole") ?: ""
-            DashboardView(navController, userName, userImageUrl, userRole)
+            val token = backStackEntry.arguments?.getString("token") ?: ""
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+
+            DashboardView(navController, userName, userImageUrl, userRole, token, userId)
         }
 
-        composable("leaves") {
-            LeavesScreen(navController)
+
+        composable(
+            "leaves/{token}/{userId}",
+            arguments = listOf(
+                navArgument("token") { type = NavType.StringType },
+                navArgument("userId") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val token = URLDecoder.decode(backStackEntry.arguments?.getString("token") ?: "", "UTF-8")
+            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+            LeavesScreen(navController, token, userId)
         }
+
 
         composable("tasks") {
             TaskListScreen(navController)
@@ -90,6 +105,7 @@ fun AppNavigation() {
         }
 
 
+
         composable(
             "applyLeave/{token}/{userId}",
             arguments = listOf(
@@ -97,8 +113,11 @@ fun AppNavigation() {
                 navArgument("userId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            val token = backStackEntry.arguments?.getString("token") ?: ""
+            val encodedToken = backStackEntry.arguments?.getString("token") ?: ""
+            val token = URLDecoder.decode(encodedToken, "UTF-8")
+
             val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+
             ApplyLeavesScreen(token, userId, navController)
         }
 

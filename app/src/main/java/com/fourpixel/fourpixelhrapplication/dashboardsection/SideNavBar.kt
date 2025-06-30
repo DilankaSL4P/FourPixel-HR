@@ -37,6 +37,7 @@ import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.fourpixel.fourpixelhrapplication.R
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
+import java.net.URLEncoder
 
 data class MenuItem(val label: String, val children: List<String> = emptyList())
 
@@ -44,7 +45,9 @@ data class MenuItem(val label: String, val children: List<String> = emptyList())
 fun SideDrawer(navController: NavController,
                userName: String,
                userImageUrl: String,
-               userRole: String ) {
+               userRole: String,
+               token: String,
+               userId: Int ) {
 
     val menuItems = listOf(
         MenuItem("Dashboard"),
@@ -182,7 +185,8 @@ fun SideDrawer(navController: NavController,
 
                                         "Tasks" -> navController.navigate("tasks")
                                         "Projects" -> navController.navigate("projects/${userName}")
-                                        "Leaves" -> navController.navigate("leaves")
+                                        "Leaves" -> navController.navigate("leaves/${URLEncoder.encode(token, "UTF-8")}/$userId")
+
                                         //"Attendance" -> navController.navigate("attendance")
 
                                     }

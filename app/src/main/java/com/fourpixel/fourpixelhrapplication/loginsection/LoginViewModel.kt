@@ -44,6 +44,13 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _projectCount = MutableStateFlow(0)
     val projectCount: StateFlow<Int> = _projectCount
 
+    private val _token = MutableStateFlow("")
+    val token: StateFlow<String> = _token
+
+    private val _userId = MutableStateFlow(0)
+    val userId: StateFlow<Int> = _userId
+
+
 
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
 
@@ -95,6 +102,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
                     if (loginResponse != null) {
                         val token = loginResponse.data.token
+                        val userId = loginResponse.data.user.id
 
                         saveAuthToken(token)
                         saveUserName(loginResponse.data.user.name)
@@ -102,6 +110,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
                         val displayRole = loginResponse.data.user.roles?.firstOrNull()?.displayName ?: "Employee"
                         saveUserRole(displayRole)
+
+                        _token.value = token
+                        _userId.value = userId
 
                         fetchProjectCount(token)
 
@@ -144,6 +155,15 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             commit()
         }
     }
+
+    private fun saveUserId(id: Int) {
+        with(sharedPreferences.edit()) {
+            putInt("user_id", id)
+            apply()
+        }
+        _userId.value = id
+    }
+
 
     private fun saveUserName(name: String?) {
         val safeName = name ?: "DefaultUser" // Ensures it's never null

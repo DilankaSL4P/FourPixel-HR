@@ -1,15 +1,12 @@
-package com.fourpixel.fourpixelhrapplication.Work
+package com.fourpixel.fourpixelhrapplication.work
 
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,22 +15,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.fourpixel.fourpixelhrapplication.client.Project
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.clip
 
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectListScreen(navController: NavController, viewModel: ProjectsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+fun ProjectListScreen(navController: NavController,
+                      userName: String,
+                      viewModel: ProjectsViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val filteredProjects by viewModel.filteredProjects.collectAsState()
@@ -82,14 +78,14 @@ fun ProjectListScreen(navController: NavController, viewModel: ProjectsViewModel
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             filteredProjects.forEach { project ->
-                ProjectCard(project)
+                ProjectCard(project,userName)
             }
         }
     }
 }
 
 @Composable
-fun ProjectCard(project: Project) {
+fun ProjectCard(project: Project, userName: String) {
 
     val displayStatus = when (project.status.lowercase()) {
         "in progress" -> "Ongoing"
@@ -139,7 +135,7 @@ fun ProjectCard(project: Project) {
             )}
 
             Spacer(modifier = Modifier.height(8.dp))
-            Divider(color = Color(0xFFDADADA), thickness = 1.dp)
+            HorizontalDivider(thickness = 1.dp, color = Color(0xFFDADADA))
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
@@ -171,7 +167,8 @@ fun ProjectCard(project: Project) {
                     fontFamily = poppinsFontFamily
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                CircleInitial("S")
+                val userInitial = userName.firstOrNull()?.uppercaseChar()?.toString() ?: ""
+                ShowCircleInitial(userInitial)
             }
 
 
@@ -180,14 +177,23 @@ fun ProjectCard(project: Project) {
     }
 }
 
-data class Project(
-    val id: Int,
-    val project_name: String,
-    val start_date: String,
-    val deadline: String?,
-    val status: String,
-    val company_id: Int
-)
+@Composable
+fun ShowCircleInitial(initial: String) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(RoundedCornerShape(50))
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = initial,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+    }
+}
 
 
 

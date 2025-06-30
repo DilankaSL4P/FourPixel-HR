@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.DashBoardSection
+package com.fourpixel.fourpixelhrapplication.dashboardsection
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,12 +32,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.fourpixel.fourpixelhrapplication.R
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
+import java.net.URLEncoder
 
 data class MenuItem(val label: String, val children: List<String> = emptyList())
 
@@ -45,14 +45,16 @@ data class MenuItem(val label: String, val children: List<String> = emptyList())
 fun SideDrawer(navController: NavController,
                userName: String,
                userImageUrl: String,
-               userRole: String ) {
+               userRole: String,
+               token: String,
+               userId: Int ) {
 
     val menuItems = listOf(
         MenuItem("Dashboard"),
         MenuItem("Work", listOf("Projects", "Tasks")),
-        MenuItem("HR", listOf("Leaves", "Attendance")),
+        MenuItem("HR", listOf("Leaves")),
         //MenuItem("Finance", listOf("Expenses", "Pay Sheets")),
-        //MenuItem("NoticeBoard"),
+        MenuItem("NoticeBoard"),
         //MenuItem("About"),
         MenuItem("Logout")
     )
@@ -182,9 +184,10 @@ fun SideDrawer(navController: NavController,
                                     when (child) {
 
                                         "Tasks" -> navController.navigate("tasks")
-                                        "Projects" -> navController.navigate("projects")
-                                        "Leaves" -> navController.navigate("leaves")
-                                        "Attendance" -> navController.navigate("attendance")
+                                        "Projects" -> navController.navigate("projects/${userName}")
+                                        "Leaves" -> navController.navigate("leaves/${URLEncoder.encode(token, "UTF-8")}/$userId")
+
+                                        //"Attendance" -> navController.navigate("attendance")
 
                                     }
                                 }
@@ -193,7 +196,7 @@ fun SideDrawer(navController: NavController,
                 }
             }
         }
-        Spacer(modifier = Modifier.height(230.dp))
+        Spacer(modifier = Modifier.height(250.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Spacer(modifier = Modifier.width(24.dp))
             Text(

@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.fourpixel.fourpixelhrapplication.AppNavigation
 
 import com.fourpixel.fourpixelhrapplication.ui.theme.FourPixelHRApplicationTheme
 

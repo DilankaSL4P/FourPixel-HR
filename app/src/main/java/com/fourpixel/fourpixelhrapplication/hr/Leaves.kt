@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.HR
+package com.fourpixel.fourpixelhrapplication.hr
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,20 +21,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.fourpixel.fourpixelhrapplication.DashBoardSection.getDayWithSuffix
 import com.fourpixel.fourpixelhrapplication.ui.theme.poppinsFontFamily
 import com.fourpixel.fourpixelhrapplication.client.Leave
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun LeavesScreen(
     navController: NavController,
+    token: String,
+    userId: Int,
     viewModel: LeavesViewModel = viewModel()
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -42,6 +43,8 @@ fun LeavesScreen(
     val filteredLeavesByMonth by viewModel.filteredLeavesByMonth.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val encodedToken = URLEncoder.encode(token, "UTF-8")
+
 
     Column(
         modifier = Modifier
@@ -63,7 +66,7 @@ fun LeavesScreen(
             )
             Spacer(modifier = Modifier.weight(1f))
             Button(
-                onClick = { navController.navigate("applyLeave") },
+                onClick = { navController.navigate("applyLeave/$encodedToken/$userId") },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9C75A)),
                 shape = RoundedCornerShape(12.dp)
             ) {

@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.LoginSection
+package com.fourpixel.fourpixelhrapplication.loginsection
 
 
 import android.widget.Toast
@@ -114,16 +114,22 @@ fun LoginScreen(navController: NavController,
                         val updatedUserName = viewModel.userName.value
                         val updatedImageUrl = viewModel.userImageUrl.value
                         val updatedUserRole = viewModel.userRole.value
+                        val token = viewModel.token.value // <-- get token here
+                        val userId = viewModel.userId.value // <-- get userId here
 
-                        if (updatedUserName.isNotBlank()) {
+                        if (updatedUserName.isNotBlank() && token.isNotBlank() && userId != 0) {
                             val encodedUserName = URLEncoder.encode(updatedUserName, "UTF-8")
                             val encodedImageUrl = URLEncoder.encode(updatedImageUrl, "UTF-8")
                             val encodedUserRole = URLEncoder.encode(updatedUserRole, "UTF-8")
+                            val encodedToken = URLEncoder.encode(token, "UTF-8")
 
-                            navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole"){
+                            navController.navigate(
+                                "dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole/$encodedToken/$userId"
+                            ) {
                                 popUpTo("login") {
                                     inclusive = true
                                 }
+                                launchSingleTop = true
                             }
                         }
                     }
@@ -151,24 +157,33 @@ fun LoginScreen(navController: NavController,
                     val updatedUserName = viewModel.userName.value
                     val updatedImageUrl = viewModel.userImageUrl.value
                     val updatedUserRole = viewModel.userRole.value
+                    val token = viewModel.token.value // <-- get token here
+                    val userId = viewModel.userId.value // <-- get userId here
 
-                    if (updatedUserName.isNotBlank()) {
+                    if (updatedUserName.isNotBlank() && token.isNotBlank() && userId != 0) {
                         val encodedUserName = URLEncoder.encode(updatedUserName, "UTF-8")
                         val encodedImageUrl = URLEncoder.encode(updatedImageUrl, "UTF-8")
                         val encodedUserRole = URLEncoder.encode(updatedUserRole, "UTF-8")
-                        navController.navigate("dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole"){
+                        val encodedToken = URLEncoder.encode(token, "UTF-8")
+
+                        navController.navigate(
+                            "dashboard/$encodedUserName/$encodedImageUrl/$encodedUserRole/$encodedToken/$userId"
+                        ) {
                             popUpTo("login") {
-                                inclusive = true // Removes the login screen from popping back
+                                inclusive = true
                             }
                             launchSingleTop = true
                         }
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDB833))
-        ) {
+        )
+        {
             if (loading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {

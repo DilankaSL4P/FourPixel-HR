@@ -10,6 +10,8 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 import com.google.gson.JsonElement
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 //Login
 data class LoginRequest(
@@ -30,6 +32,7 @@ data class UserData(
 
 //User Data
 data class User(
+    @SerializedName("id") val id: Int,
     @SerializedName("name") val name: String,
     @SerializedName("email") val email: String,
     @SerializedName("image_url") val imageUrl: String?,
@@ -112,8 +115,8 @@ data class Leave(
 data class Notice(
     @SerializedName("id") val id: Int,
     @SerializedName("heading") val heading: String,
-    @SerializedName("description") val description: String,
-    @SerializedName("to") val to: String
+    @SerializedName("description") val description: String?,
+
 )
 
 data class NoticeResponse(
@@ -139,13 +142,20 @@ data class ClockInSuccessData(
     @SerializedName("time") val time: String
 )
 
-//Clock out classes
+//Attendance and Clock out classes
+data class ClockOutRequest(
+    //@SerializedName("id") val attendanceId: Int,
+    //@SerializedName("work_from_type") val workFromType: String,
+    //@SerializedName("working_from") val workingFrom: String,
+    @SerializedName("currentLatitude") val currentLatitude: Double?,
+    @SerializedName("currentLongitude") val currentLongitude: Double?
+
+)
 data class TodayAttendanceResponse(
-    @SerializedName("message") val message: String,
-    @SerializedName("data") val data: TodayAttendanceData?
+    @SerializedName("data") val data: TodayAttendanceRootData?
 )
 
-data class TodayAttendanceData(
+data class TodayAttendaceData(
     @SerializedName("id") val id: Int,
     @SerializedName("clock_in_time") val clockInTime: String,
     @SerializedName("clock_out_time") val clockOutTime: String?,
@@ -153,6 +163,79 @@ data class TodayAttendanceData(
     @SerializedName("working_from") val workingFrom: String?,
     @SerializedName("currentLatitude") val currentLatitude: String?,
     @SerializedName("currentLongitude") val currentLongitude: String?
+)
+
+data class TodayAttendanceRootData(
+    @SerializedName("attendance")
+    val attendanceRecord: AttendanceRecord?,
+
+    @SerializedName("office_hours_passed")
+    val officeHoursPassed: Boolean?,
+    val time: String?,
+    @SerializedName("ip_address")
+    val ipAddress: String?,
+    @SerializedName("remaining_clock_in")
+    val remainingClockIn: Int?
+)
+
+data class AttendanceRecord(
+    val id: Int,
+    @SerializedName("company_id")
+    val companyId: Int?,
+    @SerializedName("location_id")
+    val locationId: Int?,
+    @SerializedName("clock_in_time")
+    val clockInTime: String?,
+    @SerializedName("clock_out_time")
+    val clockOutTime: String?,
+    @SerializedName("auto_clock_out")
+    val autoClockOut: Int?,
+    @SerializedName("clock_in_ip")
+    val clockInIp: String?,
+    @SerializedName("clock_out_ip")
+    val clockOutIp: String?,
+    @SerializedName("working_from")
+    val workingFrom: String?,
+    val late: String?,
+    @SerializedName("half_day")
+    val halfDay: String?,
+    @SerializedName("half_day_type")
+    val halfDayType: String?,
+    @SerializedName("added_by")
+    val addedBy: Int?,
+    @SerializedName("last_updated_by")
+    val lastUpdatedBy: Int?,
+    val latitude: String?,
+    val longitude: String?,
+    @SerializedName("shift_start_time")
+    val shiftStartTime: String?,
+    @SerializedName("shift_end_time")
+    val shiftEndTime: String?,
+    @SerializedName("employee_shift_id")
+    val employeeShiftId: Int?,
+    @SerializedName("created_at")
+    val createdAt: String?,
+    @SerializedName("updated_at")
+    val updatedAt: String?,
+    @SerializedName("work_from_type")
+    val workFromType: String?,
+    @SerializedName("overwrite_attendance")
+    val overwriteAttendance: String?,
+    @SerializedName("clock_in_date")
+    val clockInDate: String?,
+    val company: CompanyDetails?
+)
+
+data class CompanyDetails(
+    val id: Int?,
+    @SerializedName("logo_url")
+    val logoUrl: String?,
+    @SerializedName("login_background_url")
+    val loginBackgroundUrl: String?,
+    @SerializedName("moment_date_format")
+    val momentDateFormat: String?,
+    @SerializedName("favicon_url")
+    val faviconUrl: String?
 )
 
 data class GenericResponse(
@@ -178,13 +261,24 @@ data class LeaveItem(
     @SerializedName("status") val status: String
 )
 
-data class AddLeaveRequest(
-    @SerializedName("item") val item: LeaveItem,
-    @SerializedName("users") val users: List<Any>,
-    @SerializedName("types") val types: List<Any>,
+//Apply Leave Classes
+data class UserForLeave(
+    @SerializedName("id") val id: Int
+)
+
+data class TypeForLeave(
+    @SerializedName("id") val id: Int
+)
+
+data class ApplyLeaveRequest(
+    @SerializedName("unique_id") val uniqueId: String,
+    @SerializedName("duration") val duration: String,
+    @SerializedName("leave_date") val leaveDate: String,
+    @SerializedName("reason") val reason: String,
     @SerializedName("status") val status: String,
-    @SerializedName("error") val error: JsonElement?,
-    @SerializedName("push") val push: JsonElement?
+    @SerializedName("half_day_type") val halfDayType: String?,
+    @SerializedName("user") val user: UserForLeave,
+    @SerializedName("type") val type: TypeForLeave
 )
 
 
@@ -202,7 +296,7 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<TaskResponse>
 
-    @GET("api/v1/notice-board")
+    @GET("/api/v1/notice")
     suspend fun getNotices(
         @Header("Authorization") token: String
     ): Response<NoticeResponse>
@@ -220,13 +314,20 @@ interface ApiService {
 
     @GET("api/v1/attendance/today")
     suspend fun getTodayAttendance(
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
     ): Response<TodayAttendanceResponse>
 
-    @POST("api/v1/attendance/clock-out")
+    @POST("api/v1/attendance/clock-out/{id}")
     suspend fun clockOut(
         @Header("Authorization") token: String,
-        @Body body: Map<String, String>
+        @Path("id") attendanceId: Int,
+        @Body body: ClockOutRequest
+    ): Response<GenericResponse>
+
+    @POST("api/v1/leave")
+    suspend fun applyLeave(
+        @Header("Authorization") token: String,
+        @Body request: ApplyLeaveRequest
     ): Response<GenericResponse>
 
 

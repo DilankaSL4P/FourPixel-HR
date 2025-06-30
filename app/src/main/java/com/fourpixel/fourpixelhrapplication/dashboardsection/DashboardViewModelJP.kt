@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.DashBoardSection
+package com.fourpixel.fourpixelhrapplication.dashboardsection
 
 import android.app.Application
 import android.content.Context
@@ -14,22 +14,22 @@ import com.fourpixel.fourpixelhrapplication.client.ApiService
 import com.fourpixel.fourpixelhrapplication.client.ClockInRequest
 import com.fourpixel.fourpixelhrapplication.client.Notice
 import com.fourpixel.fourpixelhrapplication.client.RetrofitClient
-import com.fourpixel.fourpixelhrapplication.client.TodayAttendanceData
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.tasks.await
 import android.Manifest
 import android.location.Location
+import com.fourpixel.fourpixelhrapplication.client.ClockOutRequest
+import com.fourpixel.fourpixelhrapplication.client.TodayAttendanceRootData
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
 import com.google.android.gms.location.Priority
 import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.common.api.ResolvableApiException
-
-
+import com.google.common.reflect.TypeToken
+import java.net.URLDecoder
 
 
 class DashboardViewModelJP(application: Application) : AndroidViewModel(application) {
@@ -61,8 +61,10 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _notices = MutableStateFlow<List<Notice>>(emptyList())
     val notices = _notices.asStateFlow()
 
-    private val _showNoticePopup = MutableStateFlow(false)
-    val showNoticePopup = _showNoticePopup.asStateFlow()
+    private val _selectedNotice = MutableStateFlow<Notice?>(null)
+    val selectedNotice = _selectedNotice.asStateFlow()
+
+    private val KEY_VIEWED_NOTICE_IDS = "viewed_notice_ids"
 
     private val apiService: ApiService = RetrofitClient.instance.create(ApiService::class.java)
 
@@ -72,8 +74,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _projectCount = MutableStateFlow(0)
     val projectCount = _projectCount.asStateFlow()
 
-    private val _todayAttendance = MutableStateFlow<TodayAttendanceData?>(null)
-    val todayAttendance: StateFlow<TodayAttendanceData?> = _todayAttendance.asStateFlow()
+    private val _todayAttendance = MutableStateFlow<TodayAttendanceRootData?>(null)
+    val todayAttendance: StateFlow<TodayAttendanceRootData?> = _todayAttendance.asStateFlow()
 
     //Location setting up
     private val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 0)
@@ -92,20 +94,28 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
     private val _showToastEvent = MutableSharedFlow<String>()
     val showToastEvent = _showToastEvent.asSharedFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
+
     private var timerJob: Job? = null
 
     init {
         loadUserName()
         viewModelScope.launch{
-            launch { fetchProjectCount() }
-            launch { fetchTaskCount() }
+            fetchTodayAttendance()
+            fetchProjectCount()
+            fetchTaskCount()
+            fetchNotices()
         }
-        fetchNotices()
     }
 
+
     fun setUserName(name: String) {
-        _userName.value = name
-        saveUserName(name)
+        val decodedName = URLDecoder.decode(name, "UTF-8")
+        val firstName = decodedName.split(" ")[0]
+        _userName.value = firstName
+        saveUserName(firstName)
     }
 
     private fun saveUserName(name: String) {
@@ -217,10 +227,22 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             try {
                 val response = apiService.getNotices("Bearer $token")
                 if (response.isSuccessful) {
-                    val noticesList = response.body()?.data ?: emptyList()
-                    _notices.value = noticesList
+                    val noticesFromApi = response.body()?.data ?: emptyList()
 
-                    _showNoticePopup.value = noticesList.isNotEmpty()
+                    // --- START of new logic ---
+                    // 1. Load the set of viewed notice IDs from SharedPreferences.
+                    val viewedIds = sharedPreferences.getStringSet(KEY_VIEWED_NOTICE_IDS, emptySet()) ?: emptySet()
+
+                    // 2. Filter the list from the API to get only unread notices.
+                    val unreadNotices = noticesFromApi.filter { notice ->
+                        // Keep the notice only if its ID is NOT in the viewedIds set.
+                        notice.id.toString() !in viewedIds
+                    }
+
+                    // 3. Update the StateFlow with only the unread notices.
+                    _notices.value = unreadNotices
+                    // --- END of new logic ---
+
                 } else {
                     println("DEBUG: Error fetching notices - ${response.code()}")
                 }
@@ -230,20 +252,104 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun onNoticeClicked(notice: Notice) {
+        _selectedNotice.value = notice
+    }
+
+    fun onPopupDismissed() {
+        // --- START of new logic ---
+        // 1. Get the notice that was just viewed.
+        val viewedNotice = _selectedNotice.value ?: return
+
+        // 2. Load the current set of viewed IDs, creating a mutable copy.
+        val viewedIds = sharedPreferences.getStringSet(KEY_VIEWED_NOTICE_IDS, emptySet()) ?: emptySet()
+        val newViewedIds = viewedIds.toMutableSet()
+
+        // 3. Add the ID of the newly viewed notice to the set.
+        newViewedIds.add(viewedNotice.id.toString())
+
+        // 4. Save the updated set back to SharedPreferences.
+        sharedPreferences.edit()
+            .putStringSet(KEY_VIEWED_NOTICE_IDS, newViewedIds)
+            .apply()
+        // --- END of new logic ---
+
+        // Hide the popup
+        _selectedNotice.value = null
+
+        // Finally, update the UI immediately by removing the notice from the current list.
+        // This makes the banner disappear without needing to re-fetch from the network.
+        _notices.value = _notices.value.filter { it.id != viewedNotice.id }
+    }
+
+
     fun fetchTodayAttendance() {
         viewModelScope.launch {
             try {
                 val token = sharedPreferences.getString("auth_token", null) ?: return@launch
                 val response = apiService.getTodayAttendance("Bearer $token")
+
                 if (response.isSuccessful) {
                     _todayAttendance.value = response.body()?.data
                     println("DEBUG: Fetched today’s attendance - ${response.body()?.data}")
+
+                    val attendanceRecord = _todayAttendance.value?.attendanceRecord
+                    val clockInTimeStr = attendanceRecord?.clockInTime
+
+                    if (!clockInTimeStr.isNullOrBlank()) {
+                        try {
+                            // Parse clock_in_time (assumes ISO 8601 format like "2024-06-26T04:30:00.000Z")
+                            val formatter = java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
+                            val clockInInstant = java.time.OffsetDateTime.parse(clockInTimeStr, formatter).toInstant()
+                            val nowInstant = java.time.Instant.now()
+
+                            val elapsedSeconds = java.time.Duration.between(clockInInstant, nowInstant).seconds
+
+                            if (elapsedSeconds > 0) {
+                                _isRunning.value = true
+                                _elapsedTime.value = elapsedSeconds
+                                startTimer()
+                                println("DEBUG: Timer resumed with elapsed seconds: $elapsedSeconds")
+                            }
+                        } catch (e: Exception) {
+                            println("DEBUG: Error parsing clock-in time - ${e.localizedMessage}")
+                        }
+                    }
+
                 } else {
                     println("DEBUG: Failed to fetch today's attendance - ${response.code()}")
                 }
+
             } catch (e: Exception) {
                 println("DEBUG: Error fetching today's attendance - ${e.localizedMessage}")
             }
+        }
+    }
+
+    private suspend fun getCurrentLocation(): Location? {
+
+        if (!checkLocationPermission(getApplication())) {
+            showToast("Location permission is required. Please grant it in settings.")
+            return null
+        }
+
+
+        return try {
+            val location = fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).await()
+            if (location == null) {
+                showToast("Failed to get your current location. Please try again.")
+            }
+            location
+        } catch (e: Exception) {
+
+            if (e is ResolvableApiException) {
+                _resolveLocationSettingsEvent.emit(e)
+                showToast("Please enable location services.")
+            } else {
+                showToast("Could not retrieve location: ${e.message}")
+                println("Error getting location: ${e.localizedMessage}")
+            }
+            null // Return null on any exception
         }
     }
 
@@ -278,6 +384,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
 
        //Get location
         viewModelScope.launch {
+            _isLoading.value = true
             var currentLatitude: Double? = null
             var currentLongitude: Double? = null
 
@@ -308,7 +415,7 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                 if (e is ResolvableApiException) {
                     // Location settings are not satisfied, but can be fixed by user.
                     println("DEBUG: Location settings not satisfied, but resolvable. Prompting user...")
-                    _resolveLocationSettingsEvent.emit(e) // Emit event for UI to resolve
+                    _resolveLocationSettingsEvent.emit(e)
                     showToast("Please enable location services to clock in.")
                 } else {
                     // Other errors
@@ -316,6 +423,8 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                     showToast("Failed to get your current location. Please ensure location services are enabled and try again.")
                 }
                 revertClockInState()
+            } finally{
+                _isLoading.value = false
             }
         }
     }
@@ -324,8 +433,9 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         _isRunning.value = true
         _elapsedTime.value = 0L
         startTimer()
+        _isLoading.value = true
 
-        val workingFrom = _selectedOption.value
+        val workingFrom = "Office"
         try {
             println("Clocking in with working_from: $workingFrom, Lat: $latitude, Long: $longitude")
             val workFromType = "office"
@@ -338,29 +448,12 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
                     if (clockInResponse.message == "Clocked in successfully") {
                         println("Clock-in successful on API. Message: ${clockInResponse.message}")
                         fetchTodayAttendance()
-
-                        // Now, clockInResponse.data is ClockInSuccessData?
-                        val attendanceData = clockInResponse.data?.let {
-
-                            TodayAttendanceData(
-                                id = -1, // You don't get an ID from this response, might need another fetch
-                                clockInTime = it.time,
-                                clockOutTime = null,
-                                workFromType = workFromType, // From re
-                                workingFrom = workingFrom, // From re
-                                currentLatitude = latitude?.toString(),
-                                currentLongitude = longitude?.toString()
-                            )
-                        }
-
-                        _todayAttendance.value = attendanceData
-                        println("Parsed attendance data: $attendanceData")
+                        showToast("Clocked in successfully!")
 
                     } else {
-                        // This covers cases where response.isSuccessful is true, but the message isn't the expected success message.
                         val errorMessage = clockInResponse.message
                         println("API Clock-in succeeded with unexpected message - ${response.code()} Message: $errorMessage")
-                        showToast("Clock-in response: $errorMessage") // Inform user about unexpected message
+                        showToast("Clock-in response: $errorMessage")
                         revertClockInState()
                     }
                 } else {
@@ -379,6 +472,9 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
             e.printStackTrace()
             showToast("Clock-in failed due to a network error. Please check your internet connection.")
             revertClockInState()
+        }
+        finally {
+            _isLoading.value = false
         }
     }
 
@@ -405,55 +501,89 @@ class DashboardViewModelJP(application: Application) : AndroidViewModel(applicat
         _elapsedTime.value = 0L
     }
 
+    data class ErrorResponse(val message: String?, val errors: Map<String, List<String>>?)
 
-
-    fun confirmClockOut(reason: String) {
+    fun confirmClockOut() {
+        // 1. Retrieve authentication token
         val token = sharedPreferences.getString("auth_token", null)
         if (token == null) {
-            println("DEBUG: Auth token not found for clock-out. Cannot proceed.")
-            showToast("Authentication error. Please log in again.")
-            _showDialog.value = false // Always dismiss dialog
+            viewModelScope.launch { _showToastEvent.emit("Authentication error. Please log in again.") }
+            _showDialog.value = false
             return
         }
-        println("DEBUG: Clock-out initiated. Using token: Bearer $token")
+
+        // 2. Validate the current attendance record before proceeding
+        val currentAttendanceRecord = _todayAttendance.value?.attendanceRecord
+        if (currentAttendanceRecord == null || currentAttendanceRecord.id <= 0) {
+            println("DEBUG: No valid active clock-in record found for clock-out. Aborting.")
+            viewModelScope.launch { _showToastEvent.emit("You are not currently clocked in.") }
+            // Clean up the UI state
+            fetchTodayAttendance()
+            revertClockInState()
+            _showDialog.value = false
+            return
+        }
 
         viewModelScope.launch {
+
+            _isLoading.value = true
+            // 3. Get the user's current location
+            val location = getCurrentLocation()
+            if (location == null) {
+                // Error is likely already shown by getCurrentLocation(), so just close the dialog
+                _showDialog.value = false
+                return@launch
+            }
+
+            // 4. Prepare the request body
+            val clockOutRequestBody = ClockOutRequest(
+                currentLatitude = location.latitude,
+                currentLongitude = location.longitude
+            )
+
+            val attendanceId = currentAttendanceRecord.id
+            println("DEBUG: Sending clock-out request for attendance ID: $attendanceId with location (Lat: ${location.latitude}, Lng: ${location.longitude})")
+
             try {
-                val requestBody = mapOf("reason" to reason)
-                println("DEBUG: Sending clock-out request body: $requestBody")
+                // 5. Make the API call - This call correctly matches your Retrofit interface
+                val response = apiService.clockOut(
+                    token = "Bearer $token",      // Maps to @Header("Authorization")
+                    attendanceId = attendanceId,      // Maps to @Query("id")
+                    body = clockOutRequestBody  // Maps to @Body
+                )
 
-                val response = apiService.clockOut("Bearer $token", requestBody)
-
+                // 6. Handle the response
                 if (response.isSuccessful) {
-                    // Assuming your clockOut API returns a GenericResponse or similar with a message
-                    val successMessage = response.body()?.message ?: "Clocked out successfully from server."
+                    // Handle success
+                    val successMessage = response.body()?.message ?: "Clocked out successfully!"
                     println("DEBUG: Clock-out successful from server: $successMessage")
-                    showToast(successMessage)
-
-                    // *********** ONLY UPDATE UI STATE IF SERVER CALL WAS SUCCESSFUL ***********
-                    _isRunning.value = false
-                    timerJob?.cancel()
-                    _elapsedTime.value = 0L
-                    // *************************************************************************
-
+                    _showToastEvent.emit(successMessage)
+                    // Reset state after successful clock-out
+                    revertClockInState()
+                    _todayAttendance.value = null
                 } else {
+                    // Handle error
                     val errorBody = response.errorBody()?.string()
-                    val errorMessage = "Clock-out failed: Server error ${response.code()}. Details: ${errorBody ?: "No specific error message"}"
+                    // A more robust way to parse the error message
+                    val errorMessage = try {
+                        val type = object : TypeToken<ErrorResponse>() {}.type
+                        val errorResponse: ErrorResponse? = Gson().fromJson(errorBody, type)
+                        errorResponse?.message ?: "Clock-out failed: Server error ${response.code()}"
+                    } catch (e: Exception) {
+                        "Clock-out failed: Invalid error format from server."
+                    }
                     println("DEBUG: $errorMessage")
-                    showToast(errorMessage)
-                    // If clock-out failed on server, _isRunning remains true,
-                    // and the timer will continue to run (or if stopped, will be re-started by fetchTodayAttendance)
+                    _showToastEvent.emit(errorMessage)
                 }
             } catch (e: Exception) {
+                // Handle network or other exceptions
+                val errorMessage = "Clock-out failed due to a network error."
                 println("DEBUG: Clock-out API call exception - ${e.localizedMessage}")
-                e.printStackTrace()
-                showToast("Clock-out failed due to a network error. Please check your internet connection and try again.")
-                // If an exception occurs, _isRunning remains true, user can retry
+                _showToastEvent.emit(errorMessage)
             } finally {
-                // No matter the outcome, always fetch the latest attendance from the server
-                // to ensure UI is in sync with the backend.
-                fetchTodayAttendance()
-                _showDialog.value = false // Always dismiss dialog
+                // 7. Ensure the dialog is always closed
+                _showDialog.value = false
+                _isLoading.value = false
             }
         }
     }

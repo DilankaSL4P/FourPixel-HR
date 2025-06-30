@@ -1,4 +1,4 @@
-package com.fourpixel.fourpixelhrapplication.Work
+package com.fourpixel.fourpixelhrapplication.work
 
 import android.app.Application
 import android.content.Context
